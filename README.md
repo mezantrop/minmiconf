@@ -1,6 +1,6 @@
-# Minimum minimorum configure (Minmiconf)
+# Minimum minimorum configure (Minmiconf) script
 
-## Minmiconf script is written for my humble needs to set values in a Makefile
+## Minmiconf is written for my humble needs to set values in a Makefile
 
 ### Notes
 
@@ -9,12 +9,12 @@
 
 ### TO-DO List
 
-| Status | Function                 | Description                                                                      |
-|--------|--------------------------|----------------------------------------------------------------------------------|
-| [x]    | `dprintf("$*")`          | If debug mode is on print a message specified in `$*`                            |
-| [x]    | `detect_path("$1" "$2")` | Detect a valid pathname in a list: `$1` accounting file-permissions: `$2`        |
-| [x]    | `ifdebug()`              | If `DEBUG` value is `[yY1-9]` return `0`; `[nN0]` return `1`; On error return `2`|
-| [x]    | `write_vars("$1" "$2")`  | Write/update variables specified in `$1` list and their values to/in a `$2` file |
+| Status           | Function               | Description                                                                  |
+|------------------|------------------------|------------------------------------------------------------------------------|
+|:white_check_mark:|`dprintf("$*")`         |If debug mode is on print a message specified in `$*`                         |
+|:white_check_mark:|`detect_path("$1" "$2")`|Detect a valid pathname in a list: `$1` accounting file-permissions: `$2`     |
+|:white_check_mark:|`ifdebug()`             |If `DEBUG` value is `[yY1-9]` return `0`; `[nN0]`: `1`; on error: `2`         |
+|:white_check_mark:|`write_vars("$1" "$2")` |Write/update variables specified in `$1` list and their values to a `$2` file |
 
 ### Contacts
 
