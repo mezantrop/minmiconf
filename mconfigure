@@ -14,7 +14,7 @@ init() {
     # -- Makefile variables to be set ---------------------------------------- #
     WITH_TCP_NODELAY=${WITH_TCP_NODELAY=1}
     USER=${USER=`whoami`}
-    PREFIX=${PREFIX=`detect_path "/opt /usr/local $HOME" "dr"`}
+    PREFIX=${PREFIX=`detect_path "/opt /usr/local $HOME" "drw" "all"`}
 
     # -- Action variables ---------------------------------------------------- #
     SET_VARS="WITH_TCP_NODELAY USER PREFIX"
@@ -55,7 +55,8 @@ detect_path() {
     #
     # $1 - Space separated path specifications
     # $2 - permissions to check (dfrwx)
-    # Output: Prints the first matched path or empty string on error
+    # $3 - 1 or "all" to print all valid; 0 or "" to show the first one only
+    # Output: Prints matched path(s) or empty string on error
     # Return: 0 - on success, 1 on failure or error
     #
 
@@ -64,7 +65,25 @@ detect_path() {
     _prms="`echo "$2" |
         sed -e 's/\([a-z]\)/\1 /g' \
             -e 'y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/'`"
+    case  "$3" in
+        0|"")
+            _all=0
+            dprintf "detect_path(): Print all valid: disabled"
+        ;;
 
+        1|all)
+            _all=1
+            dprintf "detect_path(): Print all valid: enabled"
+        ;;
+
+        *)
+            dprintf "detect_path(): Argument \$3: [$3] is not valid"
+            return 1
+        ;;
+    esac
+    dprintf "Print all valid: [$_all]"
+
+    _rcode=0
     for _p in $_path; do
         _inp=0
         _acp=0
@@ -77,7 +96,7 @@ detect_path() {
                     [ -d "$_p" ] && {
                         _acp=`expr $_acp + 1`
                         ifdebug && _dout="$_dout""d"
-                    } || break
+                    } || break;
                 ;;
 
                 *f*)
@@ -85,7 +104,7 @@ detect_path() {
                     [ -f "$_p" ] && {
                         _acp=`expr $_acp + 10`
                         ifdebug && _dout="$_dout""f"
-                    } || break
+                    } || break;
                 ;;
 
                 *r*)
@@ -93,7 +112,7 @@ detect_path() {
                     [ -r "$_p" ] && {
                         _acp=`expr $_acp + 100`
                         ifdebug && _dout="$_dout""r"
-                    } || break
+                    } || break;
                 ;;
 
                 *w*)
@@ -101,7 +120,7 @@ detect_path() {
                     [ -w "$_p" ] && {
                         _acp=`expr $_acp + 1000`
                         ifdebug && _dout="$_dout""w"
-                    } || break
+                    } || break;
                 ;;
 
                 *x*)
@@ -109,25 +128,33 @@ detect_path() {
                     [ -x "$_p" ] && {
                         _acp=`expr $_acp + 10000`
                         ifdebug && _dout="$_dout""x"
-                    } || break
+                    } || break;
                 ;;
 
                 *)
                     dprintf "detect_path(): Path: wrong permissions argument"
-                    echo ""; return 1
+                    echo ""
+                    return 1
                 ;;
             esac
         done
 
         [ $_inp -eq $_acp ] && {
+            _rcode=0
             dprintf "detect_path(): Valid path: [$_dout] [$_p]"
-            echo $_p; return 0;
-        } ||
+            echo $_p;
+            if [ $_all -eq 0 ]; then return 0; fi
+        } || {
+            _rcode=1
             dprintf "detect_path(): NOT valid: [$_p] Score: $_inp/$_acp"
+        }
     done
 
-    dprintf "detect_path(): No valid path detected"
-    echo ""; return 1
+    [ ! $_rcode ] && {
+        dprintf "detect_path(): No valid path detected"
+        echo ""
+        return 1
+    } || return 0
 }
 
 # ---------------------------------------------------------------------------- #
@@ -167,4 +194,4 @@ init
 
 write_vars "$SET_VARS" "mfile"
 
-# echo OUT $PREFIX
+echo OUT $PREFIX
