@@ -12,9 +12,17 @@ DEBUG="y"
 # ---------------------------------------------------------------------------- #
 init() {
     # -- Makefile variables to be set ---------------------------------------- #
+    CC=cc                                               # TODO: Detect me!
+    PREFIX_PATH_CANDIDATES="/opt /usr/local $HOME"
+
     WITH_TCP_NODELAY=${WITH_TCP_NODELAY=1}
     USER=${USER=`whoami`}
-    PREFIX=${PREFIX=`detect_path "/opt /usr/local $HOME" "drw" "all"`}
+    PREFIX=${PREFIX=`detect_path "$PREFIX_PATH_CANDIDATES" "drw" ""`}
+
+    INCLUDE_PATH_CANDIDATES="/usr/include $PREFIX/include"
+    LIB_PATH_CANDIDATES="/lib /usr/lib /usr/lib32 $PREFIX/lib"
+    LIB_PATH=${LIB_PATH=`detect_lib_path "$LIB_PATH_CANDIDATES" "dr" "all"`}
+
 
     # -- Action variables ---------------------------------------------------- #
     SET_VARS="WITH_TCP_NODELAY USER PREFIX"
@@ -51,7 +59,7 @@ dprintf() {
 # ---------------------------------------------------------------------------- #
 detect_path() {
     #
-    # Detect a valid path from a list
+    # Detect valid path(s) from a list
     #
     # $1 - Space separated path specifications
     # $2 - permissions to check (dfrwx)
@@ -142,7 +150,7 @@ detect_path() {
         [ $_inp -eq $_acp ] && {
             _rcode=0
             dprintf "detect_path(): Valid path: [$_dout] [$_p]"
-            echo $_p;
+            printf "%s " "$_p"
             if [ $_all -eq 0 ]; then return 0; fi
         } || {
             _rcode=1
@@ -155,6 +163,38 @@ detect_path() {
         echo ""
         return 1
     } || return 0
+}
+
+# ---------------------------------------------------------------------------- #
+detect_lib_path() {
+    #
+    # Detect valid library path(s) from a list
+    #
+    # $1 - Space separated path specifications
+    # $2 - permissions to check (dfrwx)
+    # $3 - 1 or "all" to print all valid; 0 or "" to show the first one only
+    # Output: Prints matched path(s) or empty string on error
+    # Return: 0 - on success, 1 on failure or error
+    #
+
+    for l in `detect_path "$LIB_PATH_CANDIDATES" "dr" "all"`; do
+        printf "\-L%s " "$l"
+    done
+}
+
+# ---------------------------------------------------------------------------- #
+detect_library() {
+    #
+    # Detect library with name $1 exists, using $2 path(s) list as hints
+    #
+
+    _tlib="$1"
+    _libs="$2"
+
+    echo "int main() {return 0;}" > ctest.c
+    $CC ctest.c -o ctest.out -l"$_tlib" "$_libs" &&
+        echo "OK" || echo "KO"
+    rm ctest.c ctest.out
 }
 
 # ---------------------------------------------------------------------------- #
@@ -194,4 +234,7 @@ init
 
 write_vars "$SET_VARS" "mfile"
 
-echo OUT $PREFIX
+echo OUT "$PREFIX"
+echo OUT "$LIB_PATH"
+
+detect_library "c" "$LIB_PATH"

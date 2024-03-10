@@ -7,14 +7,22 @@
 * **The project is on the very early stage of progress, nothing works!**
 * `Minmiconf` is not an autotools configure script, you most probably do not need it
 
+### Implemented functions
+
+| Function          | Description                                                                                      |
+|-------------------|--------------------------------------------------------------------------------------------------|
+|`dprintf()`        |If debug mode is on print a message specified in `$*`                                             |
+|`detect_path()`    |Print one or all (based on `$3`) pathname(s) from a list `$1` with permissions `$2`               |
+|`detect_lib_path()`|Similar to above, detects valid library path(s) from a list                                       |
+|`ifdebug()`        |If `DEBUG` value is `[yY1-9]` return `0`; `[nN0]`: `1`; on error: `2`                             |
+|`write_vars()`     |Write/update variables specified in `$1` list and their values to a `$2` file                     |
+
 ### TO-DO List
 
-| Status           | Function      | Description                                                                       |
-|------------------|---------------|-----------------------------------------------------------------------------------|
-|:white_check_mark:|`dprintf()`    |If debug mode is on print a message specified in `$*`                              |
-|:white_check_mark:|`detect_path()`|Print one or all (based on `$3`) pathname(s) from a list `$1` with permissions `$2`|
-|:white_check_mark:|`ifdebug()`    |If `DEBUG` value is `[yY1-9]` return `0`; `[nN0]`: `1`; on error: `2`              |
-|:white_check_mark:|`write_vars()` |Write/update variables specified in `$1` list and their values to a `$2` file      |
+| Function          | Description                                                                                      |
+|-------------------|--------------------------------------------------------------------------------------------------|
+|`detect_cc()`      |Try to detect C-language compiler                                                                 |
+|`detect_library()` |Tries to detect if the `$1` library can be reached by default and the paths from `$2` list        |
 
 ### Contacts
 
