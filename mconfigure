@@ -185,7 +185,7 @@ detect_lib_path() {
 # ---------------------------------------------------------------------------- #
 detect_library() {
     #
-    # Detect library with name $1 exists, using $2 path(s) list as hints
+    # Detect library with name $1 exists using $2 path(s) list as hints
     #
 
     _tlib="$1"

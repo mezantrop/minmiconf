@@ -14,7 +14,7 @@
 |`dprintf()`        |If debug mode is on print a message specified in `$*`                                             |
 |`detect_path()`    |Print one or all (based on `$3`) pathname(s) from a list `$1` with permissions `$2`               |
 |`detect_lib_path()`|Similar to above, detects valid library path(s) from a list                                       |
-|`detect_library()` |Detect library with name `$1` exists, using `$2` path(s) list as hints                            |
+|`detect_library()` |Detect library with name `$1` exists using `$2` path(s) list as hints                             |
 |`ifdebug()`        |If `DEBUG` value is `[yY1-9]` return `0`; `[nN0]`: `1`; on error: `2`                             |
 |`write_vars()`     |Write/update variables specified in `$1` list and their values to a `$2` file                     |
 
