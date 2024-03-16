@@ -16,7 +16,7 @@
 * Script maintenance variables, with names staring with "_" character
 * `init()` function to set reasonable defaults
 * Function definitions:
-  * Script maintaining functions (SMF), with names staring with "_" character, e.g., `_dprintf()`
+  * Script maintaining functions, with names staring with "_" character, e.g., `_dprintf()`
   * `detect_*()` functions: return existence/status of something
   * `define_*()` functions: set/change variable in memory, e.g., `WITH_*` variables
   * `decide_*()` functions: decide yes/no if argument is acceptable
@@ -26,7 +26,7 @@
 
 ### Implemented functions
 
-#### SMF
+#### Script maintaining functions
 
 | Function          | Description                                                                                      |
 |-------------------|--------------------------------------------------------------------------------------------------|
