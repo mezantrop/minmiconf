@@ -6,8 +6,8 @@
 
 * **The project is on the very early stage of development, nothing works, don't even try!**
 * This not an [autotools](https://www.gnu.org/software/automake/manual/html_node/Autotools-Introduction.html) `configure` script
-* There are many better alternatives: less complex or having more functionality, but I like inventing my own bicycles
-* Yes, you most probably do not need `Minmiconf`
+* There are many better alternatives: less complex or having more functionality, but I like inventing bicycles
+* Yes, you most probably, do not need `Minmiconf`
 
 ### Description
 
@@ -44,6 +44,8 @@
 
 #### Write functions
 
+| Function          | Description                                                                                      |
+|-------------------|--------------------------------------------------------------------------------------------------|
 |`write_vars()`     |Write/update variables specified in `$1` list and their values to a `$2` file                     |
 
 ### TO-DO List
