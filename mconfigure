@@ -6,13 +6,19 @@
 # ---------------------------------------------------------------------------- #
 
 # -- Script variables -------------------------------------------------------- #
-DEBUG="y"
+_DEBUG="y"
 scriptname=`basename $0`		# Scriptname. Should we care if $0 = sh?
 
 # ---------------------------------------------------------------------------- #
 init() {
     # -- Makefile variables to be set ---------------------------------------- #
-    CC=cc                                               # TODO: Detect me!
+
+    # TODO
+    # * Detect cc
+    # * Use WITH_* variables!
+    # * distinguish script maintenance variables from exported and detected ones
+
+    CC=cc
     PREFIX_PATH_CANDIDATES="/opt /usr/local $HOME"
 
     WITH_TCP_NODELAY=${WITH_TCP_NODELAY=1}
@@ -31,16 +37,16 @@ init() {
 }
 
 # ---------------------------------------------------------------------------- #
-ifdebug() {
+_ifdebug() {
 
     #
-    # Check debug mode - DEBUG variable is set to:
+    # Check debug mode - _DEBUG variable is set to:
     #   - "yY" or "[1-9]" and return 0
     #   - "nN" or 0 and return 1
     #  On any error return 2
     #
 
-    case "$DEBUG" in
+    case "$_DEBUG" in
         0|[nN])        return 1 ;;
         [1-9]|[yY])    return 0 ;;
         *)             return 2 ;;
@@ -48,12 +54,12 @@ ifdebug() {
 }
 
 # ---------------------------------------------------------------------------- #
-dprintf() {
+_dprintf() {
     #
     # Print a message from $* if in debug mode
     #
 
-    ifdebug && printf "DEBUG: %s\n" "$*" >&2
+    _ifdebug && printf "DEBUG: %s\n" "$*" >&2
 }
 
 # ---------------------------------------------------------------------------- #
@@ -76,34 +82,34 @@ detect_path() {
     case  "$3" in
         0|"")
             _all=0
-            dprintf "detect_path(): Print all valid: disabled"
+            _dprintf "detect_path(): Print all valid: disabled"
         ;;
 
         1|all)
             _all=1
-            dprintf "detect_path(): Print all valid: enabled"
+            _dprintf "detect_path(): Print all valid: enabled"
         ;;
 
         *)
-            dprintf "detect_path(): Argument \$3: [$3] is not valid"
+            _dprintf "detect_path(): Argument \$3: [$3] is not valid"
             return 1
         ;;
     esac
-    dprintf "Print all valid: [$_all]"
+    _dprintf "Print all valid: [$_all]"
 
     _rcode=0
     for _p in $_path; do
         _inp=0
         _acp=0
-        ifdebug && _dout=""
-        dprintf "detect_path(): Checking: [$_p]"
+        _ifdebug && _dout=""
+        _dprintf "detect_path(): Checking: [$_p]"
         for _prm in $_prms; do
             case "$_prm" in
                 *d*)
                     _inp=`expr $_inp + 1`
                     [ -d "$_p" ] && {
                         _acp=`expr $_acp + 1`
-                        ifdebug && _dout="$_dout""d"
+                        _ifdebug && _dout="$_dout""d"
                     } || break;
                 ;;
 
@@ -111,7 +117,7 @@ detect_path() {
                     _inp=`expr $_inp + 10`
                     [ -f "$_p" ] && {
                         _acp=`expr $_acp + 10`
-                        ifdebug && _dout="$_dout""f"
+                        _ifdebug && _dout="$_dout""f"
                     } || break;
                 ;;
 
@@ -119,7 +125,7 @@ detect_path() {
                     _inp=`expr $_inp + 100`
                     [ -r "$_p" ] && {
                         _acp=`expr $_acp + 100`
-                        ifdebug && _dout="$_dout""r"
+                        _ifdebug && _dout="$_dout""r"
                     } || break;
                 ;;
 
@@ -127,7 +133,7 @@ detect_path() {
                     _inp=`expr $_inp + 1000`
                     [ -w "$_p" ] && {
                         _acp=`expr $_acp + 1000`
-                        ifdebug && _dout="$_dout""w"
+                        _ifdebug && _dout="$_dout""w"
                     } || break;
                 ;;
 
@@ -135,12 +141,12 @@ detect_path() {
                     _inp=`expr $_inp + 10000`
                     [ -x "$_p" ] && {
                         _acp=`expr $_acp + 10000`
-                        ifdebug && _dout="$_dout""x"
+                        _ifdebug && _dout="$_dout""x"
                     } || break;
                 ;;
 
                 *)
-                    dprintf "detect_path(): Path: wrong permissions argument"
+                    _dprintf "detect_path(): Path: wrong permissions argument"
                     echo ""
                     return 1
                 ;;
@@ -149,17 +155,17 @@ detect_path() {
 
         [ $_inp -eq $_acp ] && {
             _rcode=0
-            dprintf "detect_path(): Valid path: [$_dout] [$_p]"
+            _dprintf "detect_path(): Valid path: [$_dout] [$_p]"
             printf "%s " "$_p"
             if [ $_all -eq 0 ]; then return 0; fi
         } || {
             _rcode=1
-            dprintf "detect_path(): NOT valid: [$_p] Score: $_inp/$_acp"
+            _dprintf "detect_path(): NOT valid: [$_p] Score: $_inp/$_acp"
         }
     done
 
     [ ! $_rcode ] && {
-        dprintf "detect_path(): No valid path detected"
+        _dprintf "detect_path(): No valid path detected"
         echo ""
         return 1
     } || return 0
@@ -191,7 +197,7 @@ detect_library() {
     _tlib="$1"
     _libs="$2"
     _tmpd=`mktemp -d ./$scriptname.XXXXXX` || {
-        dprintf "detect_library(): Failed creating a temporary directory"
+        _dprintf "detect_library(): Failed creating a temporary directory"
         return 1
     }
     _testc="$_tmpd/ctest.c"
@@ -199,13 +205,28 @@ detect_library() {
     echo "int main() {return 0;}" > $_testc
     $CC $_testc -o $_testc.out -l"$_tlib" "$_libs" > /dev/null 2>&1 && {
         rm -r $_tmpd
-	dprintf "detect_library(): Library: [$_tlib] found"
+        _dprintf "detect_library(): Library: [$_tlib] found"
         return 0
     } || {
         rm -r $_tmpd
-	dprintf "detect_library(): Library: [$_tlib] not found"
+        _dprintf "detect_library(): Library: [$_tlib] not found"
         return 1
     }
+}
+
+# ---------------------------------------------------------------------------- #
+detect_user() {
+    #
+    # Detect and return current username; Respects USER and WITH_USER variables
+    #
+
+    [ -n "$USER" ] && _user="$USER"
+    [ -n "$WITH_USER" ] && _user="$WITH_USER"
+    _user=${_user=`whoami`}
+
+    echo "$_user"
+    _dprintf "detect_user(): detected user: [$_user]"
+    [ -n $_user ] && return 0 || return 1
 }
 
 # ---------------------------------------------------------------------------- #
@@ -229,11 +250,11 @@ write_vars() {
         # Find if variable is in the file
         [ "`grep "$_var_rgx$_var=$_vrgx" "$_file"`" ] && {
             # Update the variable value...
-            dprintf "write_vars(): Updating [$_var] = [$_val] > [$_file]"
+            _dprintf "write_vars(): Updating [$_var] = [$_val] > [$_file]"
             sed -i '' 's|'"$_var_rgx"''"$_var"'='"$_val_rgx"'|'"$_var"'='"$_val"'|' $_file
         } || {
             # ... or initiate it with the value
-            dprintf "write_vars(): Creating [$_var] = [$_val] > [$_file]"
+            _dprintf "write_vars(): Creating [$_var] = [$_val] > [$_file]"
             _f=`cat $_file`
             printf "%s=%s\n%s" "$_var" "$_val" "$_f" > $_file
         }
@@ -249,3 +270,5 @@ echo OUT "$PREFIX"
 echo OUT "$LIB_PATH"
 
 detect_library "c" "$LIB_PATH"
+
+detect_user
