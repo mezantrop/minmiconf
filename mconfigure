@@ -10,31 +10,14 @@ _DEBUG="y"
 scriptname=`basename $0`		# Scriptname. Should we care if $0 = sh?
 
 # ---------------------------------------------------------------------------- #
-init() {
-    # -- Makefile variables to be set ---------------------------------------- #
+CC_CANDIDATES="cc clang gcc"
+PREFIX_PATH_CANDIDATES="/usr/local /opt $HOME"
+INCLUDE_PATH_CANDIDATES="/usr/include $PREFIX/include"
+LIB_PATH_CANDIDATES="/lib /usr/lib /usr/lib32 $PREFIX/lib"
 
-    # TODO
-    # * Detect cc
-    # * Use WITH_* variables!
-    # * distinguish script maintenance variables from exported and detected ones
-
-    CC=cc
-    PREFIX_PATH_CANDIDATES="/opt /usr/local $HOME"
-
-    WITH_TCP_NODELAY=${WITH_TCP_NODELAY=1}
-    USER=${USER=`whoami`}
-    PREFIX=${PREFIX=`detect_path "$PREFIX_PATH_CANDIDATES" "drw" ""`}
-
-    INCLUDE_PATH_CANDIDATES="/usr/include $PREFIX/include"
-    LIB_PATH_CANDIDATES="/lib /usr/lib /usr/lib32 $PREFIX/lib"
-    LIB_PATH=${LIB_PATH=`detect_lib_path "$LIB_PATH_CANDIDATES" "dr" "all"`}
-
-
-    # -- Action variables ---------------------------------------------------- #
-    SET_VARS="WITH_TCP_NODELAY USER PREFIX"
+SET_VARS="WITH_TCP_NODELAY WITH_USER PREFIX"
 
     # PREFIX WITH_LIBSSH2
-}
 
 # ---------------------------------------------------------------------------- #
 _ifdebug() {
@@ -55,6 +38,7 @@ _ifdebug() {
 
 # ---------------------------------------------------------------------------- #
 _dprintf() {
+
     #
     # Print a message from $* if in debug mode
     #
@@ -64,37 +48,44 @@ _dprintf() {
 
 # ---------------------------------------------------------------------------- #
 detect_path() {
+
     #
     # Detect valid path(s) from a list
     #
     # $1 - Space separated path specifications
-    # $2 - permissions to check (dfrwx)
-    # $3 - 1 or "all" to print all valid; 0 or "" to show the first one only
+    # $2 - permissions to check (dfrwx), default: "frx"
+    # $3 - 1/"all" to print all valid (default); 0/"" to show the 1-st one only
     # Output: Prints matched path(s) or empty string on error
     # Return: 0 - on success, 1 on failure or error
     #
 
     _path="$1"
     # Prepare permissions string for iteration: "DRWX" -> "d r w x "
-    _prms="`echo "$2" |
-        sed -e 's/\([a-z]\)/\1 /g' \
-            -e 'y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/'`"
-    case  "$3" in
-        0|"")
-            _all=0
-            _dprintf "detect_path(): Print all valid: disabled"
-        ;;
+    [ -n "$2" ] &&
+        _prms="`echo "$2" |
+            sed -e 's/\([a-z]\)/\1 /g' \
+                -e 'y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/'`" ||
+        _prms="frx"
 
-        1|all)
-            _all=1
-            _dprintf "detect_path(): Print all valid: enabled"
-        ;;
+    [ -n "$3" ] &&
+        case "$3" in
+            0|"")
+                _all=0
+                _dprintf "detect_path(): Print all valid: disabled"
+            ;;
 
-        *)
-            _dprintf "detect_path(): Argument \$3: [$3] is not valid"
-            return 1
-        ;;
-    esac
+            1|all)
+                _all=1
+                _dprintf "detect_path(): Print all valid: enabled"
+            ;;
+
+            *)
+                _dprintf "detect_path(): Argument \$3: [$3] is not valid"
+                return 1
+            ;;
+        esac ||
+        _all=1
+
     _dprintf "Print all valid: [$_all]"
 
     _rcode=0
@@ -146,7 +137,7 @@ detect_path() {
                 ;;
 
                 *)
-                    _dprintf "detect_path(): Path: wrong permissions argument"
+                    _dprintf "detect_path(): Path: wrong permissions argument: [$_prm]"
                     echo ""
                     return 1
                 ;;
@@ -173,8 +164,9 @@ detect_path() {
 
 # ---------------------------------------------------------------------------- #
 detect_lib_path() {
+
     #
-    # Detect valid linrary path(s) from a list
+    # Detect valid linrary path(s) from a list and or LIB_PATH_CANDIDATES
     #
     # $1 - Space separated path specifications
     # $2 - permissions to check (dfrwx)
@@ -183,19 +175,50 @@ detect_lib_path() {
     # Return: 0 - on success, 1 on failure or error
     #
 
-    for l in `detect_path "$LIB_PATH_CANDIDATES" "dr" "all"`; do
-        printf "\-L%s " "$l"
+    [ -z "$1" -a -z "$LIB_PATH_CANDIDATES" ] && {
+        _dprintf "detect_lib_path(): Neither LIB_PATH_CANDIDATES nor \$1 argument is set"
+        return 1
+    }
+    _lpath="$1"
+    _perms="$2"
+    _scope="$3"
+    _out=""
+    [ -n "$LIB_PATH_CANDIDATES" -a "$_lpath" != "$LIB_PATH_CANDIDATES" ] &&
+        _lpath="$_lpath $LIB_PATH_CANDIDATES"
+    [ -n "$2" ] && _perms="$2" ||_perms="dr"
+    [ -n "$3" ] && _scope="$3" || _scope="all"
+
+    _dp=`detect_path "$_lpath" "$_perms" "$_scope"`
+    [ $? -gt 0 ] && {
+        _dprintf "detect_lib_path(): No available library paths"
+        return 1
+    }
+
+    for l in $_dp; do
+        _out="$_out -L$l"
     done
+
+    _dprintf "detect_lib_path(): [$_out]"
+    echo "$_out"
+    return 0
 }
 
 # ---------------------------------------------------------------------------- #
 detect_library() {
+
     #
-    # Detect library with name $1 exists using $2 path(s) list as hints
+    # Detect library with name $1 using $2 path(s) list and LIB_PATH_CANDIDATES
     #
 
-    _tlib="$1"
-    _libs="$2"
+    [ -n "$1" ] && _tlib="$1" || {
+        _dprintf "detect_library(): Missing library to detect"
+        return 1
+    }
+
+    [ -n "$2" ] && _lpath="$2"
+    [ -n "$WITH_LIB_PATH" -a "$_lpath" != "$LIB_PATH_CANDIDATES" ] &&
+        _lpath="$_lpath $LIB_PATH_CANDIDATES"
+
     _tmpd=`mktemp -d ./$scriptname.XXXXXX` || {
         _dprintf "detect_library(): Failed creating a temporary directory"
         return 1
@@ -203,7 +226,7 @@ detect_library() {
     _testc="$_tmpd/ctest.c"
 
     echo "int main() {return 0;}" > $_testc
-    $CC $_testc -o $_testc.out -l"$_tlib" "$_libs" > /dev/null 2>&1 && {
+    $CC $_testc -o $_testc.out -l"$_tlib" $_libs > /dev/null 2>&1 && {
         rm -r $_tmpd
         _dprintf "detect_library(): Library: [$_tlib] found"
         return 0
@@ -215,7 +238,32 @@ detect_library() {
 }
 
 # ---------------------------------------------------------------------------- #
+detect_cc() {
+    #
+    # Detect C-compiler
+    #
+
+    [ -n "$1" ] && _ccs="$1"
+    [ -n "$CC_CANDIDATES" -a "$_ccs" != "$CC_CANDIDATES" ] &&
+        _ccs="$_ccs $CC_CANDIDATES"
+
+    for _cc in $_ccs; do
+        CC="$_cc"
+        which "$CC" && detect_library "c" "$LIB_PATH" && {
+            echo "$CC"
+            _dprintf "detect_cc(): cc: [$CC] found"
+            return 0
+        }
+    done
+
+    echo ""
+    _dprintf "detect_cc(): cc: not found"
+    return 1
+}
+
+# ---------------------------------------------------------------------------- #
 detect_user() {
+
     #
     # Detect and return current username; Respects USER and WITH_USER variables
     #
@@ -231,6 +279,7 @@ detect_user() {
 
 # ---------------------------------------------------------------------------- #
 write_vars() {
+
     #
     # Write variables and their values into a file
     #
@@ -262,13 +311,12 @@ write_vars() {
 }
 
 # ---------------------------------------------------------------------------- #
-init
+# write_vars "$SET_VARS" "mfile"
 
-write_vars "$SET_VARS" "mfile"
+CC=cc   # detect_cc()
+PREFIX=${PREFIX=`detect_path "$PREFIX_PATH_CANDIDATES" "drw" ""`}
+LIB_PATH=${LIB_PATH=`detect_lib_path "$LIB_PATH_CANDIDATES" "dr" "all"`}
 
-echo OUT "$PREFIX"
-echo OUT "$LIB_PATH"
-
-detect_library "c" "$LIB_PATH"
-
-detect_user
+#detect_library "c" "$LIB_PATH"
+detect_cc "clang"
+#detect_user

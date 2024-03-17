@@ -14,7 +14,7 @@
 #### mconfigure anathomy
 
 * Script maintenance variables, with names staring with "_" character
-* `init()` function to set reasonable defaults
+* Global default variables
 * Function definitions:
   * Script maintaining functions, with names staring with "_" character, e.g., `_dprintf()`
   * `detect_*()` functions: return existence/status of something
@@ -37,6 +37,7 @@
 
 | Function          | Description                                                                                      |
 |-------------------|--------------------------------------------------------------------------------------------------|
+|`detect_cc()`      |Try to detect C-language compiler                                                                 |
 |`detect_path()`    |Print one or all (based on `$3`) pathname(s) from a list `$1` with permissions `$2`               |
 |`detect_lib_path()`|Similar to above, detects valid library path(s) from a list                                       |
 |`detect_library()` |Detect library with name `$1` exists using `$2` path(s) list as hints                             |
@@ -52,7 +53,7 @@
 
 | Function          | Description                                                                                      |
 |-------------------|--------------------------------------------------------------------------------------------------|
-|`detect_cc()`      |Try to detect C-language compiler                                                                 |
+|                   |                                                                 |
 
 ### Contacts
 
