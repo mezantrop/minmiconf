@@ -6,7 +6,7 @@
 # ---------------------------------------------------------------------------- #
 
 # -- Script variables -------------------------------------------------------- #
-_DEBUG="y"
+_DEBUG="n"
 scriptname=`basename $0`		# Scriptname. Should we care if $0 = sh?
 
 # ---------------------------------------------------------------------------- #
@@ -219,6 +219,11 @@ detect_library() {
     [ -n "$WITH_LIB_PATH" -a "$_lpath" != "$LIB_PATH_CANDIDATES" ] &&
         _lpath="$_lpath $LIB_PATH_CANDIDATES"
 
+    [ -z "$CC" ] && {
+        _dprintf "detect_library(): Missing C-compiler"
+        return 1
+    }
+
     _tmpd=`mktemp -d ./$scriptname.XXXXXX` || {
         _dprintf "detect_library(): Failed creating a temporary directory"
         return 1
@@ -226,12 +231,14 @@ detect_library() {
     _testc="$_tmpd/ctest.c"
 
     echo "int main() {return 0;}" > $_testc
-    $CC $_testc -o $_testc.out -l"$_tlib" $_libs > /dev/null 2>&1 && {
-        rm -r $_tmpd
+    $CC $_testc -o $_testc.out -l"$_tlib" $_libs > /dev/null 2>&1
+    _r=$?
+    echo "$1"
+    rm -r $_tmpd
+    [ $_r -eq 0 ] && {
         _dprintf "detect_library(): Library: [$_tlib] found"
         return 0
     } || {
-        rm -r $_tmpd
         _dprintf "detect_library(): Library: [$_tlib] not found"
         return 1
     }
@@ -249,7 +256,7 @@ detect_cc() {
 
     for _cc in $_ccs; do
         CC="$_cc"
-        which "$CC" && detect_library "c" "$LIB_PATH" && {
+        which "$CC" > /dev/null 2>&1 && detect_library "c" "$LIB_PATH" > /dev/null 2>&1 && {
             echo "$CC"
             _dprintf "detect_cc(): cc: [$CC] found"
             return 0
@@ -311,12 +318,42 @@ write_vars() {
 }
 
 # ---------------------------------------------------------------------------- #
+check_for() {
+
+    #
+    # Checking for ... wrapper with yes/no result output
+    # $* is a function with arguments to run
+    # Returns 0 on success or 1 if a failure occured
+
+    case "$1" in
+        detect_*)
+            _target=`echo $1 | awk -F'[_ ]' '{print $2}'`
+        ;;
+
+        *)
+            _target=$1
+        ;;
+    esac
+
+    printf "Checking for: $_target " >&2
+    _out=`$@`
+    _r=$?
+    printf "$_out"
+    [ $_r -eq 0 ] && echo "($_out) yes" >&2 || echo "no" >&2
+}
+
+# ---------------------------------------------------------------------------- #
+
+CC=`check_for detect_cc cc`
+check_for detect_library c
+# check_for detect_library ssh2
+
 # write_vars "$SET_VARS" "mfile"
 
-CC=cc   # detect_cc()
-PREFIX=${PREFIX=`detect_path "$PREFIX_PATH_CANDIDATES" "drw" ""`}
-LIB_PATH=${LIB_PATH=`detect_lib_path "$LIB_PATH_CANDIDATES" "dr" "all"`}
+# CC=cc   # detect_cc()
+# PREFIX=${PREFIX=`detect_path "$PREFIX_PATH_CANDIDATES" "drw" ""`}
+# LIB_PATH=${LIB_PATH=`detect_lib_path "$LIB_PATH_CANDIDATES" "dr" "all"`}
 
-#detect_library "c" "$LIB_PATH"
-detect_cc "clang"
+# detect_cc
+# detect_library "c" "$LIB_PATH"
 #detect_user
