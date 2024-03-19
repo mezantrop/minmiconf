@@ -6,11 +6,11 @@
 # ---------------------------------------------------------------------------- #
 
 # -- Script variables -------------------------------------------------------- #
-_DEBUG="y"
+_DEBUG="n"
 scriptname=`basename $0`		# Scriptname. Should we care if $0 = sh?
 
 # ---------------------------------------------------------------------------- #
-CC_CANDIDATES="cc clang gcc"
+# CC_CANDIDATES="cc clang gcc"
 PREFIX_PATH_CANDIDATES="/usr/local /opt $HOME"
 INCLUDE_PATH_CANDIDATES="/usr/include $PREFIX/include"
 LIB_PATH_CANDIDATES="/lib /usr/lib /usr/lib32 $PREFIX/lib"
@@ -44,6 +44,16 @@ _dprintf() {
     #
 
     _ifdebug && printf "DEBUG: %s\n" "$*" >&2
+}
+
+# ---------------------------------------------------------------------------- #
+_in() {
+
+    #
+    # String-in-string. Return 0 if $2 is in $1, otherwise return 1
+    #
+
+    echo "$1" | grep -q "$2" && return 0 || return 1
 }
 
 # ---------------------------------------------------------------------------- #
@@ -82,7 +92,7 @@ detect_path() {
             ;;
 
             *)
-                _dprintf "detect_path(): Argument \$3: [$3] is not valid"
+                _dprintf "detect_path(): Argument \$4: [$4] is not valid"
                 eval $1=''                      # Return value
                 return 1
             ;;
@@ -192,7 +202,6 @@ detect_lib_path() {
     _lpath="$2"
     _perms="$3"
     _scope="$4"
-    _out=""
     [ -n "$LIB_PATH_CANDIDATES" -a "$_lpath" != "$LIB_PATH_CANDIDATES" ] &&
         _lpath="$_lpath $LIB_PATH_CANDIDATES"
     [ -n "$3" ] && _perms="$3" ||_perms="dr"
@@ -205,8 +214,9 @@ detect_lib_path() {
         return 1
     }
 
+    _out=""                     # Clean _out spoiled by detect_lib_path()
     for l in $_dp; do
-        _out="$_out -L$l"
+        [ -z "$_out" ] && _out="-L$l" || _out="$_out -L$l"
     done
 
     _dprintf "detect_lib_path(): [$_out]"
@@ -343,13 +353,13 @@ write_vars() {
 check_for() {
 
     #
-    # Checking for ... wrapper with yes/no result output
+    # Checking for wrapper with yes/no result output
     # $* is a function with arguments to run
     # Returns 0 on success or 1 if a failure occured
 
     case "$1" in
         detect_*)
-            _target=`echo $1 | awk -F'[_ ]' '{print $2}'`
+            _target=`echo $1 | cut -f 2,3 -d '_'`
         ;;
 
         *)
@@ -357,17 +367,25 @@ check_for() {
         ;;
     esac
 
-    printf "Checking for: $_target " >&2
-    _out=`$@`
-    _r=$?
-    printf "$_out"
-    [ $_r -eq 0 ] && echo "($_out) yes" >&2 || echo "no" >&2
+    printf "Checking for: $_target:\t"
+    # In squre brackets _in greps for '$' and decides to eval variable or not
+    eval $@ && {
+        printf "yes\t"
+        eval echo '$'$2
+     } || {
+        printf "no\t"
+        _in "$3" '\$' && eval echo $3 || echo $3
+     }
 }
 
 # ---------------------------------------------------------------------------- #
 
-#CC=`check_for detect_cc cc`
-#check_for detect_library c
+check_for detect_lib_path "LIB_PATH" '"$LIB_PATH_CANDIDATES" "dr" "all"'
+check_for detect_cc "CC" 'cc'
+check_for detect_library "LIBC" 'c'
+check_for detect_library "LIBQWE" 'qwe'
+
+
 # check_for detect_library ssh2
 
 # write_vars "$SET_VARS" "mfile"
@@ -380,16 +398,16 @@ check_for() {
 # detect_library "c" "$LIB_PATH"
 #detect_user
 
-detect_user "MYUSER"
-echo MYUSER: [$MYUSER]
+# detect_user "MYUSER"
+# echo MYUSER: [$MYUSER]
 
-detect_path "PREFIX" "$PREFIX_PATH_CANDIDATES" "dr" ""
-echo PREFIX: [$PREFIX]
-detect_lib_path "LIB_PATH" "$LIB_PATH_CANDIDATES" "dr" "all"
-echo LIB_PATH: [$LIB_PATH]
+# detect_path "PREFIX" "$PREFIX_PATH_CANDIDATES" "dr" ""
+# echo PREFIX: [$PREFIX]
+# detect_lib_path "LIB_PATH" "$LIB_PATH_CANDIDATES" "dr" "all"
+# echo LIB_PATH: [$LIB_PATH]
 
-detect_cc "CC" "cc"
-echo "CC: [$CC]"
+# detect_cc "CC" "cc"
+# echo "CC: [$CC]"
 
-detect_library "LIB_NAME" "c" "$LIB_PATH"
-echo LIB_NAME: [$LIB_NAME]
+# detect_library "LIB_NAME" "c" "$LIB_PATH"
+# secho LIB_NAME: [$LIB_NAME]

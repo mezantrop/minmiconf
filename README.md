@@ -32,6 +32,7 @@
 |-------------------|--------------------------------------------------------------------------------------------------|
 |`_dprintf()`       |If debug mode is on print a message specified in `$*`                                             |
 |`_ifdebug()`       |If `_DEBUG` value is `[yY1-9]` return `0`; `[nN0]`: `1`; on error: `2`                            |
+|`_in()`            |String-in-string. Return `0` if `$2` is in `$1`, otherwise return `1`                             |
 
 #### Detect functions
 
@@ -43,10 +44,12 @@
 |`detect_library()` |Detect library with name `$2` exists using `$3` path(s) list as hints; Result in`$1`              |
 |`detect_user()`    |Detect current username; Respects `USER` and `WITH_USER` variables; `$1`: Results variable        |
 
-#### Write functions
+#### Output functions
 
 | Function          | Description                                                                                      |
 |-------------------|--------------------------------------------------------------------------------------------------|
+|`check_for()`      |`Checking for` wrapper with `yes`/`no`output;                                                     |
+|                   |`$1`: `f()` to run; `$2`: result arg of `f()`; `$3` the rest args of `f()`                        |
 |`write_vars()`     |Write/update variables specified in `$1` list and their values to a `$2` file                     |
 
 ### TO-DO List
