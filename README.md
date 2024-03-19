@@ -46,11 +46,10 @@
 
 #### Output functions
 
-| Function          | Description                                                                                      |
-|-------------------|--------------------------------------------------------------------------------------------------|
-|`check_for()`      |`Checking for` wrapper with `yes`/`no`output;                                                     |
-|                   |`$1`: `f()` to run; `$2`: result arg of `f()`; `$3` the rest args of `f()`                        |
-|`write_vars()`     |Write/update variables specified in `$1` list and their values to a `$2` file                     |
+| Function     | Description                                                                                           |
+|--------------|-------------------------------------------------------------------------------------------------------|
+|`check_for()` |Checker with `yes/no` output; `$1`: `f()` to run; `$2`: result arg of `f()`; `$3` the rest args of `f()`|
+|`write_vars()`|Write/update variables specified in `$1` list and their values to a `$2` file                          |
 
 ### TO-DO List
 
