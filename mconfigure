@@ -6,7 +6,7 @@
 # ---------------------------------------------------------------------------- #
 
 # -- Script variables -------------------------------------------------------- #
-_DEBUG="n"
+_DEBUG="y"
 scriptname=`basename $0`		# Scriptname. Should we care if $0 = sh?
 
 # ---------------------------------------------------------------------------- #
@@ -52,23 +52,25 @@ detect_path() {
     #
     # Detect valid path(s) from a list
     #
-    # $1 - Space separated path specifications
-    # $2 - permissions to check (dfrwx), default: "frx"
-    # $3 - 1/"all" to print all valid (default); 0/"" to show the 1-st one only
+    # $1 - Results variable
+    # $2 - Space separated path specifications
+    # $3 - permissions to check (dfrwx), default: "frx"
+    # $4 - 1/"all" to print all valid (default); 0/"" to show the 1-st one only
     # Output: Prints matched path(s) or empty string on error
     # Return: 0 - on success, 1 on failure or error
     #
 
-    _path="$1"
+    _out=''
+    _path="$2"
     # Prepare permissions string for iteration: "DRWX" -> "d r w x "
-    [ -n "$2" ] &&
-        _prms="`echo "$2" |
+    [ -n "$3" ] &&
+        _prms="`echo "$3" |
             sed -e 's/\([a-z]\)/\1 /g' \
                 -e 'y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/'`" ||
         _prms="frx"
 
-    [ -n "$3" ] &&
-        case "$3" in
+    [ -n "$4" ] &&
+        case "$4" in
             0|"")
                 _all=0
                 _dprintf "detect_path(): Print all valid: disabled"
@@ -81,6 +83,7 @@ detect_path() {
 
             *)
                 _dprintf "detect_path(): Argument \$3: [$3] is not valid"
+                eval $1=''                      # Return value
                 return 1
             ;;
         esac ||
@@ -88,7 +91,7 @@ detect_path() {
 
     _dprintf "Print all valid: [$_all]"
 
-    _rcode=0
+    _rcode=1
     for _p in $_path; do
         _inp=0
         _acp=0
@@ -138,7 +141,7 @@ detect_path() {
 
                 *)
                     _dprintf "detect_path(): Path: wrong permissions argument: [$_prm]"
-                    echo ""
+                    eval $1=''                  # Return value
                     return 1
                 ;;
             esac
@@ -147,19 +150,24 @@ detect_path() {
         [ $_inp -eq $_acp ] && {
             _rcode=0
             _dprintf "detect_path(): Valid path: [$_dout] [$_p]"
-            printf "%s " "$_p"
-            if [ $_all -eq 0 ]; then return 0; fi
+            [ -z "$_out" ] && _out="$_p" || _out="$_out $_p"
+            if [ $_all -eq 0 ]; then
+                eval $1='$_p'                   # Return value
+                return 0
+            fi
         } || {
-            _rcode=1
             _dprintf "detect_path(): NOT valid: [$_p] Score: $_inp/$_acp"
         }
     done
 
     [ ! $_rcode ] && {
         _dprintf "detect_path(): No valid path detected"
-        echo ""
+        eval $1=''                              # Return value
         return 1
-    } || return 0
+    } || {
+        eval $1='$_out'                         # Return value
+        return 0
+    }
 }
 
 # ---------------------------------------------------------------------------- #
@@ -168,29 +176,32 @@ detect_lib_path() {
     #
     # Detect valid linrary path(s) from a list and or LIB_PATH_CANDIDATES
     #
-    # $1 - Space separated path specifications
-    # $2 - permissions to check (dfrwx)
-    # $3 - 1 or "all" to print all valid; 0 or "" to show the first one only
+    # $1 - Results variable
+    # $2 - Space separated path specifications
+    # $3 - permissions to check (dfrwx)
+    # $4 - 1 or "all" to print all valid; 0 or "" to show the first one only
     # Output: Prints matched path(s) or empty string on error
     # Return: 0 - on success, 1 on failure or error
     #
 
-    [ -z "$1" -a -z "$LIB_PATH_CANDIDATES" ] && {
+    [ -z "$2" -a -z "$LIB_PATH_CANDIDATES" ] && {
         _dprintf "detect_lib_path(): Neither LIB_PATH_CANDIDATES nor \$1 argument is set"
+        eval $1=''                              # Return value
         return 1
     }
-    _lpath="$1"
-    _perms="$2"
-    _scope="$3"
+    _lpath="$2"
+    _perms="$3"
+    _scope="$4"
     _out=""
     [ -n "$LIB_PATH_CANDIDATES" -a "$_lpath" != "$LIB_PATH_CANDIDATES" ] &&
         _lpath="$_lpath $LIB_PATH_CANDIDATES"
-    [ -n "$2" ] && _perms="$2" ||_perms="dr"
-    [ -n "$3" ] && _scope="$3" || _scope="all"
+    [ -n "$3" ] && _perms="$3" ||_perms="dr"
+    [ -n "$4" ] && _scope="$4" || _scope="all"
 
-    _dp=`detect_path "$_lpath" "$_perms" "$_scope"`
+    detect_path "_dp" "$_lpath" "$_perms" "$_scope"
     [ $? -gt 0 ] && {
         _dprintf "detect_lib_path(): No available library paths"
+        eval $1=''                              # Return value
         return 1
     }
 
@@ -199,7 +210,7 @@ detect_lib_path() {
     done
 
     _dprintf "detect_lib_path(): [$_out]"
-    echo "$_out"
+    eval $1='$_out'                             # Return value
     return 0
 }
 
@@ -207,15 +218,19 @@ detect_lib_path() {
 detect_library() {
 
     #
-    # Detect library with name $1 using $2 path(s) list and LIB_PATH_CANDIDATES
+    # Detect existence of a library by its filename
     #
+    # $1 - Results variable
+    # $2 - Library name to detect
+    # $3 - Optional path(s) in addition to LIB_PATH_CANDIDATES to detect the lib
 
-    [ -n "$1" ] && _tlib="$1" || {
+
+    [ -n "$2" ] && _tlib="$2" || {
         _dprintf "detect_library(): Missing library to detect"
         return 1
     }
 
-    [ -n "$2" ] && _lpath="$2"
+    [ -n "$3" ] && _lpath="$3"
     [ -n "$WITH_LIB_PATH" -a "$_lpath" != "$LIB_PATH_CANDIDATES" ] &&
         _lpath="$_lpath $LIB_PATH_CANDIDATES"
 
@@ -233,7 +248,7 @@ detect_library() {
     echo "int main() {return 0;}" > $_testc
     $CC $_testc -o $_testc.out -l"$_tlib" $_libs > /dev/null 2>&1
     _r=$?
-    echo "$1"
+    eval $1='$_tlib'
     rm -r $_tmpd
     [ $_r -eq 0 ] && {
         _dprintf "detect_library(): Library: [$_tlib] found"
@@ -248,23 +263,29 @@ detect_library() {
 detect_cc() {
     #
     # Detect C-compiler
+    # $1 - Results variable
+    # $2 - Compiler candidates in addition to CC_CANDIDATES variable
     #
 
-    [ -n "$1" ] && _ccs="$1"
+    [ -n "$2" ] && _ccs="$2" || _ccs=""
     [ -n "$CC_CANDIDATES" -a "$_ccs" != "$CC_CANDIDATES" ] &&
         _ccs="$_ccs $CC_CANDIDATES"
 
+    _save_cc="$CC"                              # Save CC value
     for _cc in $_ccs; do
         CC="$_cc"
-        which "$CC" > /dev/null 2>&1 && detect_library "c" "$LIB_PATH" > /dev/null 2>&1 && {
-            echo "$CC"
-            _dprintf "detect_cc(): cc: [$CC] found"
+        which "$CC" > /dev/null 2>&1 &&
+            detect_library LIB_NAME "c" "$LIB_PATH" > /dev/null 2>&1 && {
+
+            eval $1='$CC'
+            _dprintf "detect_cc(): [$CC] found"
+             [ "$1" != "CC" ] && CC=$_save_cc   # Restore CC
             return 0
         }
     done
 
-    echo ""
-    _dprintf "detect_cc(): cc: not found"
+    eval $1=''
+    _dprintf "detect_cc(): $_ccs not found"
     return 1
 }
 
@@ -272,14 +293,15 @@ detect_cc() {
 detect_user() {
 
     #
-    # Detect and return current username; Respects USER and WITH_USER variables
+    # Detect current username; Respects USER and WITH_USER variables
+    # $1 - Results variable
     #
 
     [ -n "$USER" ] && _user="$USER"
     [ -n "$WITH_USER" ] && _user="$WITH_USER"
     _user=${_user=`whoami`}
 
-    echo "$_user"
+    eval $1='$_user'
     _dprintf "detect_user(): detected user: [$_user]"
     [ -n $_user ] && return 0 || return 1
 }
@@ -344,8 +366,8 @@ check_for() {
 
 # ---------------------------------------------------------------------------- #
 
-CC=`check_for detect_cc cc`
-check_for detect_library c
+#CC=`check_for detect_cc cc`
+#check_for detect_library c
 # check_for detect_library ssh2
 
 # write_vars "$SET_VARS" "mfile"
@@ -357,3 +379,17 @@ check_for detect_library c
 # detect_cc
 # detect_library "c" "$LIB_PATH"
 #detect_user
+
+detect_user "MYUSER"
+echo MYUSER: [$MYUSER]
+
+detect_path "PREFIX" "$PREFIX_PATH_CANDIDATES" "dr" ""
+echo PREFIX: [$PREFIX]
+detect_lib_path "LIB_PATH" "$LIB_PATH_CANDIDATES" "dr" "all"
+echo LIB_PATH: [$LIB_PATH]
+
+detect_cc "CC" "cc"
+echo "CC: [$CC]"
+
+detect_library "LIB_NAME" "c" "$LIB_PATH"
+echo LIB_NAME: [$LIB_NAME]

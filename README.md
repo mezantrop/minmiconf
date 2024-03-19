@@ -37,11 +37,11 @@
 
 | Function          | Description                                                                                      |
 |-------------------|--------------------------------------------------------------------------------------------------|
-|`detect_cc()`      |Try to detect C-language compiler                                                                 |
-|`detect_path()`    |Print one or all (based on `$3`) pathname(s) from a list `$1` with permissions `$2`               |
+|`detect_cc()`      |Detect C-compiler; `$1`: Results variable; `$2`: Compiler candidates in addition to CC_CANDIDATES |
+|`detect_path()`    |Print one or all (based on `$4`) pathname(s) from a list `$2` with permissions `$3`; Result in`$1`|
 |`detect_lib_path()`|Similar to above, detects valid library path(s) from a list                                       |
-|`detect_library()` |Detect library with name `$1` exists using `$2` path(s) list as hints                             |
-|`detect_user()`    |Detect and return current username; Respects `USER` and `WITH_USER` variables                     |
+|`detect_library()` |Detect library with name `$2` exists using `$3` path(s) list as hints; Result in`$1`              |
+|`detect_user()`    |Detect current username; Respects `USER` and `WITH_USER` variables; `$1`: Results variable        |
 
 #### Write functions
 
