@@ -6,7 +6,7 @@
 # ---------------------------------------------------------------------------- #
 
 # -- Script variables -------------------------------------------------------- #
-_DEBUG="n"
+_DEBUG="y"
 scriptname=`basename $0`		# Scriptname. Should we care if $0 = sh?
 
 # ---------------------------------------------------------------------------- #
@@ -283,6 +283,7 @@ detect_cc() {
     _save_cc="$CC"                              # Save CC value
     for _cc in $_ccs; do
         CC="$_cc"
+        # Does cc really works?
         which "$CC" > /dev/null 2>&1 &&
             detect_library LIB_NAME "c" "$LIB_PATH" > /dev/null 2>&1 && {
 
@@ -296,6 +297,27 @@ detect_cc() {
     eval $1=''
     _dprintf "detect_cc(): $_ccs not found"
     return 1
+}
+
+# ---------------------------------------------------------------------------- #
+detect_target() {
+
+    #
+    # Detect target triplet: machine-vendor-os
+    # $1 - Results variable
+    #
+
+    # Very rough approach
+    _machine=`uname -m`
+    _vendor="unknown"
+    _os=`uname -s`
+
+    [ "$_machine" == "amd64" ] && _machine="x86_64"
+    _triplet="$_machine-$_vendor-$_os"
+
+    _dprintf "detect_target(): [$_triplet]"
+    eval $1='$_triplet'
+    return 0
 }
 
 # ---------------------------------------------------------------------------- #
@@ -380,6 +402,7 @@ check() {
 # ---------------------------------------------------------------------------- #
 check detect_path       "PREFIX"    '"$PREFIX_PATH_CANDIDATES" "drw" "one"'
 check detect_lib_path   "LIB_PATH"  '"$LIB_PATH_CANDIDATES" "dr" "all"'
+check detect_target     "TARGET"
 check detect_cc         "CC"        'cc'
 check detect_library    "LIBC"      'c'
 check detect_library    "LIBQWE"    'qwe'
