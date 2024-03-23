@@ -10,16 +10,6 @@ _DEBUG="n"
 scriptname=`basename $0`		# Scriptname. Should we care if $0 = sh?
 
 # ---------------------------------------------------------------------------- #
-# CC_CANDIDATES="cc clang gcc"
-PREFIX_PATH_CANDIDATES="/usr/local /opt $HOME"
-INCLUDE_PATH_CANDIDATES="/usr/include $PREFIX/include"
-LIB_PATH_CANDIDATES="/lib /usr/lib /usr/lib32 $PREFIX/lib"
-
-SET_VARS="WITH_TCP_NODELAY WITH_USER PREFIX"
-
-    # PREFIX WITH_LIBSSH2
-
-# ---------------------------------------------------------------------------- #
 _ifdebug() {
 
     #
@@ -72,8 +62,8 @@ detect_path() {
     #
     # $1 - Results variable
     # $2 - Space separated path specifications
-    # $3 - permissions to check (dfrwx), default: "frx"
-    # $4 - 1/"all" to print all valid (default); 0/"" to show the 1-st one only
+    # $3 - permissions to check (dfrwx), default: "drx"
+    # $4 - "all" to print all valid (default); "one" to show the 1-st one only
     # Output: Prints matched path(s) or empty string on error
     # Return: 0 - on success, 1 on failure or error
     #
@@ -85,7 +75,7 @@ detect_path() {
         _prms="`echo "$3" |
             sed -e 's/\([a-z]\)/\1 /g' \
                 -e 'y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/'`" ||
-        _prms="frx"
+        _prms="drx"
 
     [ -z "$4" ] && _all=1 ||
         case "$4" in
@@ -106,7 +96,8 @@ detect_path() {
             ;;
         esac
 
-    _dprintf "Print all valid: [$_all]"
+    _dprintf "detect_path(): Print all valid: [$_all]"
+    _dprintf "detect_path(): Permissions: [$_prms]"
 
     _rcode=1
     for _p in $_path; do
@@ -177,7 +168,7 @@ detect_path() {
         }
     done
 
-    [ ! $_rcode ] && {
+    [ $_rcode -eq 1 ] && {
         _dprintf "detect_path(): No valid path detected"
         eval $1=''                              # Return value
         return 1
@@ -191,7 +182,7 @@ detect_path() {
 detect_lib_path() {
 
     #
-    # Detect valid linrary path(s) from a list and or LIB_PATH_CANDIDATES
+    # Detect valid linrary path(s) from $2 and or LIB_PATH_CANDIDATES
     #
     # $1 - Results variable
     # $2 - Space separated path specifications
@@ -202,7 +193,7 @@ detect_lib_path() {
     #
 
     [ -z "$2" -a -z "$LIB_PATH_CANDIDATES" ] && {
-        _dprintf "detect_lib_path(): Neither LIB_PATH_CANDIDATES nor \$1 argument is set"
+        _dprintf "detect_lib_path(): Neither LIB_PATH_CANDIDATES nor \$2 list is set"
         eval $1=''                              # Return value
         return 1
     }
@@ -214,6 +205,7 @@ detect_lib_path() {
     [ -n "$3" ] && _perms="$3" ||_perms="dr"
     [ -n "$4" ] && _scope="$4" || _scope="all"
 
+    _dp=""
     detect_path "_dp" "$_lpath" "$_perms" "$_scope"
     [ $? -gt 0 ] && {
         _dprintf "detect_lib_path(): No available library paths"
@@ -228,6 +220,43 @@ detect_lib_path() {
 
     _dprintf "detect_lib_path(): [$_out]"
     eval $1='$_out'                             # Return value
+    return 0
+}
+
+# ---------------------------------------------------------------------------- #
+detect_prefix() {
+
+    #
+    # Detect prefix from PREFIX variable, $2 and PREFIX_PATH_CANDIDATES
+    #
+    # $1 - Results variable
+    # $2 - Space separated path specifications
+    # Return: 0 - on success, 1 on failure or error
+    #
+
+    [ -z "$PREFIX" -a -z "$2" -a "$PREFIX_PATH_CANDIDATES" ] && {
+        _dprintf "detect_prefix(): Neither PREFIX, PREFIX_PATH_CANDIDATES nor \$2 list is set"
+        eval $1=''                              # Return value
+        return 1
+    }
+
+    [ -n "$PREFIX" ] &&
+        _ppath="$_ppath $PREFIX" || {
+            _ppath="$2"
+            [ -n "$PREFIX_PATH_CANDIDATES" -a "$_ppath" != "$PREFIX_PATH_CANDIDATES" ] &&
+                _ppath="$_ppath $PREFIX_PATH_CANDIDATES"
+        }
+
+    _dp=""
+    detect_path "_dp" "$_ppath" "drw" "one"
+    [ $? -gt 0 ] && {
+        _dprintf "detect_prefix(): No prefix available"
+        eval $1=''                              # Return value
+        return 1
+    }
+
+    _dprintf "detect_prefix(): [$_dp]"
+    eval $1='$_dp'                              # Return value
     return 0
 }
 
@@ -401,20 +430,33 @@ check() {
     eval $@ && {
         printf "%-5s" "yes:"
         eval echo '$'$2
+        return 0
      } || {
         printf "%-5s" "no :"
         _in "$3" '\$' && eval echo $3 || echo $3
+        return 1
      }
 }
 
 # ---------------------------------------------------------------------------- #
-check detect_path       "PREFIX"    '"$PREFIX_PATH_CANDIDATES" "drw" "one"'
+CC_CANDIDATES="cc clang gcc"
+PREFIX_PATH_CANDIDATES="$PREFIX /usr/local /opt $HOME"
+
+SET_VARS="WITH_TCP_NODELAY WITH_USER PREFIX"
+
+    # PREFIX WITH_LIBSSH2
+# ---------------------------------------------------------------------------- #
+
+PREFIX_PATH_CANDIDATES="$PREFIX /usr/local /opt $HOME"
+check detect_prefix     "PREFIX"    '"$PREFIX_PATH_CANDIDATES"'
+INCLUDE_PATH_CANDIDATES="/usr/include $PREFIX/include"
+LIB_PATH_CANDIDATES="/lib /usr/lib /usr/lib32 $PREFIX/lib"
+
 check detect_lib_path   "LIB_PATH"  '"$LIB_PATH_CANDIDATES" "dr" "all"'
 check detect_target     "TARGET"
 check detect_cc         "CC"        'cc'
 check detect_library    "LIBC"      'c'
 check detect_library    "LIBQWE"    'qwe'
-
 
 # check_for detect_library ssh2
 
