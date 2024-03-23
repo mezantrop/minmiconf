@@ -6,7 +6,7 @@
 # ---------------------------------------------------------------------------- #
 
 # -- Script variables -------------------------------------------------------- #
-_DEBUG="y"
+_DEBUG="n"
 scriptname=`basename $0`		# Scriptname. Should we care if $0 = sh?
 
 # ---------------------------------------------------------------------------- #
@@ -51,9 +51,17 @@ _in() {
 
     #
     # String-in-string. Return 0 if $2 is in $1, otherwise return 1
+    # $3
     #
 
-    echo "$1" | grep -q "$2" && return 0 || return 1
+    _icase=""
+    [ -n "$3" ] && case "$3" in
+        [nN])   _icase=""   ;;
+        [yY])   _icase="-i" ;;
+        *)      _icase=""   ;;
+    esac
+
+    echo "$1" | grep `eval echo "$_icase"` -q "$2" && return 0 || return 1
 }
 
 # ---------------------------------------------------------------------------- #
