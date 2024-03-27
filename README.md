@@ -26,7 +26,7 @@
 
 ### Implemented functions
 
-#### Maintain functions
+#### Maintenance functions
 
 | Function          | Description                                                                                      |
 |-------------------|--------------------------------------------------------------------------------------------------|
