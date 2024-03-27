@@ -1,16 +1,31 @@
 #!/bin/sh
 
 # ---------------------------------------------------------------------------- #
-# Note, this is not an autotools configure script, Minimum Minimorum Configure #
-# (MinMiCon) script is written for my humble needs to set values in a Makefile #
+# Note, this is not an autotools configure script. Minimum Minimorum Configure #
+# (MinMiConf) script is written for my humble needs to set values in Makefiles #
 # ---------------------------------------------------------------------------- #
 
 # -- Script variables -------------------------------------------------------- #
 _DEBUG="n"
-scriptname=`basename $0`		# Scriptname. Should we care if $0 = sh?
 
 # ---------------------------------------------------------------------------- #
-_ifdebug() {
+_YN() {
+    #
+    # Check $1 is set to:
+    #   - "yY" or "[1-9]" and return 0
+    #   - "nN" or 0 and return 1
+    #  On any error return 2
+    #
+
+    case "$1" in
+        0|[nN])        return 1 ;;
+        [1-9]|[yY])    return 0 ;;
+        *)             return 2 ;;
+    esac
+}
+
+# ---------------------------------------------------------------------------- #
+_IFDEBUG() {
 
     #
     # Check debug mode - _DEBUG variable is set to:
@@ -19,25 +34,21 @@ _ifdebug() {
     #  On any error return 2
     #
 
-    case "$_DEBUG" in
-        0|[nN])        return 1 ;;
-        [1-9]|[yY])    return 0 ;;
-        *)             return 2 ;;
-    esac
+    _YN "$_DEBUG"; return $?
 }
 
 # ---------------------------------------------------------------------------- #
-_dprintf() {
+_DPRINTF() {
 
     #
     # Print a message from $* if in debug mode
     #
 
-    _ifdebug && printf "DEBUG: %s\n" "$*" >&2
+    _IFDEBUG && printf "DEBUG: %s\n" "$*" >&2
 }
 
 # ---------------------------------------------------------------------------- #
-_in() {
+IN() {
 
     #
     # String-in-string. Return 0 if $2 is in $1, otherwise return 1
@@ -55,7 +66,7 @@ _in() {
 }
 
 # ---------------------------------------------------------------------------- #
-detect_path() {
+DETECT_PATH() {
 
     #
     # Detect valid path(s) from a list
@@ -81,37 +92,37 @@ detect_path() {
         case "$4" in
             [oO][nN][eE])
                 _all=0
-                _dprintf "detect_path(): Print all valid: disabled"
+                _DPRINTF "DETECT_PATH(): Print all valid: disabled"
             ;;
 
             [aA][lL][lL])
                 _all=1
-                _dprintf "detect_path(): Print all valid: enabled"
+                _DPRINTF "DETECT_PATH(): Print all valid: enabled"
             ;;
 
             *)
-                _dprintf "detect_path(): Argument \$4: [$4] is not valid"
+                _DPRINTF "DETECT_PATH(): Argument \$4: [$4] is not valid"
                 eval $1=''                      # Return value
                 return 1
             ;;
         esac
 
-    _dprintf "detect_path(): Print all valid: [$_all]"
-    _dprintf "detect_path(): Permissions: [$_prms]"
+    _DPRINTF "DETECT_PATH(): Print all valid: [$_all]"
+    _DPRINTF "DETECT_PATH(): Permissions: [$_prms]"
 
     _rcode=1
     for _p in $_path; do
         _inp=0
         _acp=0
-        _ifdebug && _dout=""
-        _dprintf "detect_path(): Checking: [$_p]"
+        _IFDEBUG && _dout=""
+        _DPRINTF "DETECT_PATH(): Checking: [$_p]"
         for _prm in $_prms; do
             case "$_prm" in
                 *d*)
                     _inp=`expr $_inp + 1`
                     [ -d "$_p" ] && {
                         _acp=`expr $_acp + 1`
-                        _ifdebug && _dout="$_dout""d"
+                        _IFDEBUG && _dout="$_dout""d"
                     } || break;
                 ;;
 
@@ -119,7 +130,7 @@ detect_path() {
                     _inp=`expr $_inp + 10`
                     [ -f "$_p" ] && {
                         _acp=`expr $_acp + 10`
-                        _ifdebug && _dout="$_dout""f"
+                        _IFDEBUG && _dout="$_dout""f"
                     } || break;
                 ;;
 
@@ -127,7 +138,7 @@ detect_path() {
                     _inp=`expr $_inp + 100`
                     [ -r "$_p" ] && {
                         _acp=`expr $_acp + 100`
-                        _ifdebug && _dout="$_dout""r"
+                        _IFDEBUG && _dout="$_dout""r"
                     } || break;
                 ;;
 
@@ -135,7 +146,7 @@ detect_path() {
                     _inp=`expr $_inp + 1000`
                     [ -w "$_p" ] && {
                         _acp=`expr $_acp + 1000`
-                        _ifdebug && _dout="$_dout""w"
+                        _IFDEBUG && _dout="$_dout""w"
                     } || break;
                 ;;
 
@@ -143,12 +154,12 @@ detect_path() {
                     _inp=`expr $_inp + 10000`
                     [ -x "$_p" ] && {
                         _acp=`expr $_acp + 10000`
-                        _ifdebug && _dout="$_dout""x"
+                        _IFDEBUG && _dout="$_dout""x"
                     } || break;
                 ;;
 
                 *)
-                    _dprintf "detect_path(): Path: wrong permissions argument: [$_prm]"
+                    _DPRINTF "DETECT_PATH(): Path: wrong permissions argument: [$_prm]"
                     eval $1=''                  # Return value
                     return 1
                 ;;
@@ -157,19 +168,19 @@ detect_path() {
 
         [ $_inp -eq $_acp ] && {
             _rcode=0
-            _dprintf "detect_path(): Valid path: [$_dout] [$_p]"
+            _DPRINTF "DETECT_PATH(): Valid path: [$_dout] [$_p]"
             [ -z "$_out" ] && _out="$_p" || _out="$_out $_p"
             if [ $_all -eq 0 ]; then
                 eval $1='$_p'                   # Return value
                 return 0
             fi
         } || {
-            _dprintf "detect_path(): NOT valid: [$_p] Score: $_inp/$_acp"
+            _DPRINTF "DETECT_PATH(): NOT valid: [$_p] Score: $_inp/$_acp"
         }
     done
 
     [ $_rcode -eq 1 ] && {
-        _dprintf "detect_path(): No valid path detected"
+        _DPRINTF "DETECT_PATH(): No valid path detected"
         eval $1=''                              # Return value
         return 1
     } || {
@@ -179,7 +190,7 @@ detect_path() {
 }
 
 # ---------------------------------------------------------------------------- #
-detect_lib_path() {
+DETECT_LIB_PATH() {
 
     #
     # Detect valid linrary path(s) from $2 and or LIB_PATH_CANDIDATES
@@ -193,7 +204,7 @@ detect_lib_path() {
     #
 
     [ -z "$2" -a -z "$LIB_PATH_CANDIDATES" ] && {
-        _dprintf "detect_lib_path(): Neither LIB_PATH_CANDIDATES nor \$2 list is set"
+        _DPRINTF "DETECT_LIB_PATH(): Neither LIB_PATH_CANDIDATES nor \$2 list is set"
         eval $1=''                              # Return value
         return 1
     }
@@ -206,36 +217,36 @@ detect_lib_path() {
     [ -n "$4" ] && _scope="$4" || _scope="all"
 
     _dp=""
-    detect_path "_dp" "$_lpath" "$_perms" "$_scope"
+    DETECT_PATH "_dp" "$_lpath" "$_perms" "$_scope"
     [ $? -gt 0 ] && {
-        _dprintf "detect_lib_path(): No available library paths"
+        _DPRINTF "DETECT_LIB_PATH(): No available library paths"
         eval $1=''                              # Return value
         return 1
     }
 
-    _out=""                     # Clean _out spoiled by detect_lib_path()
+    _out=""                     # Clean _out spoiled by DETECT_LIB_PATH()
     for l in $_dp; do
         [ -z "$_out" ] && _out="-L$l" || _out="$_out -L$l"
     done
 
-    _dprintf "detect_lib_path(): [$_out]"
+    _DPRINTF "DETECT_LIB_PATH(): [$_out]"
     eval $1='$_out'                             # Return value
     return 0
 }
 
 # ---------------------------------------------------------------------------- #
-detect_prefix() {
+DETECT_PREFIX() {
 
     #
-    # Detect prefix from PREFIX variable, $2 and PREFIX_PATH_CANDIDATES
+    # Detect prefix from PREFIX variable, $2 and PREFIX_CANDIDATES
     #
     # $1 - Results variable
     # $2 - Space separated path specifications
     # Return: 0 - on success, 1 on failure or error
     #
 
-    [ -z "$PREFIX" -a -z "$2" -a "$PREFIX_PATH_CANDIDATES" ] && {
-        _dprintf "detect_prefix(): Neither PREFIX, PREFIX_PATH_CANDIDATES nor \$2 list is set"
+    [ -z "$PREFIX" -a -z "$2" -a "$PREFIX_CANDIDATES" ] && {
+        _DPRINTF "DETECT_PREFIX(): Neither PREFIX, PREFIX_CANDIDATES nor \$2 list is set"
         eval $1=''                              # Return value
         return 1
     }
@@ -243,25 +254,25 @@ detect_prefix() {
     [ -n "$PREFIX" ] &&
         _ppath="$_ppath $PREFIX" || {
             _ppath="$2"
-            [ -n "$PREFIX_PATH_CANDIDATES" -a "$_ppath" != "$PREFIX_PATH_CANDIDATES" ] &&
-                _ppath="$_ppath $PREFIX_PATH_CANDIDATES"
+            [ -n "$PREFIX_CANDIDATES" -a "$_ppath" != "$PREFIX_CANDIDATES" ] &&
+                _ppath="$_ppath $PREFIX_CANDIDATES"
         }
 
     _dp=""
-    detect_path "_dp" "$_ppath" "drw" "one"
+    DETECT_PATH "_dp" "$_ppath" "drw" "one"
     [ $? -gt 0 ] && {
-        _dprintf "detect_prefix(): No prefix available"
+        _DPRINTF "DETECT_PREFIX(): No prefix available"
         eval $1=''                              # Return value
         return 1
     }
 
-    _dprintf "detect_prefix(): [$_dp]"
+    _DPRINTF "DETECT_PREFIX(): [$_dp]"
     eval $1='$_dp'                              # Return value
     return 0
 }
 
 # ---------------------------------------------------------------------------- #
-detect_library() {
+DETECT_LIBRARY() {
 
     #
     # Detect existence of a library by its filename
@@ -273,7 +284,7 @@ detect_library() {
     #
 
     [ -n "$2" ] && _tlib="$2" || {
-        _dprintf "detect_library(): Missing library to detect"
+        _DPRINTF "DETECT_LIBRARY(): Missing library to detect"
         return 1
     }
 
@@ -283,12 +294,12 @@ detect_library() {
     [ -n "$LIBPATH" ] && _lpath="$LIBPATH"
 
     [ -z "$CC" ] && {
-        _dprintf "detect_library(): Missing C-compiler"
+        _DPRINTF "DETECT_LIBRARY(): Missing C-compiler"
         return 1
     }
 
-    _tmpd=`mktemp -d ./$scriptname.XXXXXX` || {
-        _dprintf "detect_library(): Failed creating a temporary directory"
+    _tmpd=`mktemp -d ./minmiconf.XXXXXX` || {
+        _DPRINTF "DETECT_LIBRARY(): Failed creating a temporary directory"
         return 1
     }
     _testc="$_tmpd/ctest.c"
@@ -299,16 +310,16 @@ detect_library() {
     eval $1='$_tlib'
     rm -r $_tmpd
     [ $_r -eq 0 ] && {
-        _dprintf "detect_library(): Library: [$_tlib] found"
+        _DPRINTF "DETECT_LIBRARY(): Library: [$_tlib] found"
         return 0
     } || {
-        _dprintf "detect_library(): Library: [$_tlib] not found"
+        _DPRINTF "DETECT_LIBRARY(): Library: [$_tlib] not found"
         return 1
     }
 }
 
 # ---------------------------------------------------------------------------- #
-detect_cc() {
+DETECT_CC() {
     #
     # Detect C-compiler
     # $1 - Results variable
@@ -324,22 +335,22 @@ detect_cc() {
         CC="$_cc"
         # Does cc really works?
         which "$CC" > /dev/null 2>&1 &&
-            detect_library LIB_NAME "c" "$LIB_PATH" > /dev/null 2>&1 && {
+            DETECT_LIBRARY LIB_NAME "c" "$LIB_PATH" > /dev/null 2>&1 && {
 
             eval $1='$CC'
-            _dprintf "detect_cc(): [$CC] found"
+            _DPRINTF "DETECT_CC(): [$CC] found"
              [ "$1" != "CC" ] && CC=$_save_cc   # Restore CC
             return 0
         }
     done
 
     eval $1=''
-    _dprintf "detect_cc(): $_ccs not found"
+    _DPRINTF "DETECT_CC(): $_ccs not found"
     return 1
 }
 
 # ---------------------------------------------------------------------------- #
-detect_target() {
+DETECT_TARGET() {
 
     #
     # Detect target triplet: machine-vendor-os
@@ -354,13 +365,13 @@ detect_target() {
     [ "$_machine" == "amd64" ] && _machine="x86_64"
     _triplet="$_machine-$_vendor-$_os"
 
-    _dprintf "detect_target(): [$_triplet]"
+    _DPRINTF "DETECT_TARGET(): [$_triplet]"
     eval $1='$_triplet'
     return 0
 }
 
 # ---------------------------------------------------------------------------- #
-detect_user() {
+DETECT_USER() {
 
     #
     # Detect current username; Respects USER and WITH_USER variables
@@ -372,45 +383,12 @@ detect_user() {
     _user=${_user=`whoami`}
 
     eval $1='$_user'
-    _dprintf "detect_user(): detected user: [$_user]"
+    _DPRINTF "DETECT_USER(): detected user: [$_user]"
     [ -n $_user ] && return 0 || return 1
 }
 
 # ---------------------------------------------------------------------------- #
-write_vars() {
-
-    #
-    # Write variables and their values into a file
-    #
-    # $1 - a string containing space separated variable names
-    # $2 - a file to write or (update) the variables
-    #
-
-    _vars=$1
-    _file=$2
-    _var_rgx="^[:space:]*"
-    _val_rgx="[:space:]*[a-zA-Z0-9[:punct:]]*"
-
-    for i in $_vars; do
-        _var="$i"
-        _val="`eval echo '$'{$i}`"
-
-        # Find if variable is in the file
-        [ "`grep "$_var_rgx$_var=$_vrgx" "$_file"`" ] && {
-            # Update the variable value...
-            _dprintf "write_vars(): Updating [$_var] = [$_val] > [$_file]"
-            sed -i '' 's|'"$_var_rgx"''"$_var"'='"$_val_rgx"'|'"$_var"'='"$_val"'|' $_file
-        } || {
-            # ... or initiate it with the value
-            _dprintf "write_vars(): Creating [$_var] = [$_val] > [$_file]"
-            _f=`cat $_file`
-            printf "%s=%s\n%s" "$_var" "$_val" "$_f" > $_file
-        }
-    done
-}
-
-# ---------------------------------------------------------------------------- #
-check() {
+DECIDE() {
 
     #
     # Checking for wrapper with yes/no result output
@@ -428,36 +406,52 @@ check() {
     esac
 
     printf "Checking: %16s: " "$_target"
-    # In squre brackets _in greps for '$' and decides to eval variable or not
+    # In squre brackets IN() greps for '$' and decides to eval variable or not
     eval $@ && {
         printf "%-5s" "yes:"
         eval echo '$'$2
         return 0
     } || {
         printf "%-5s" "no :"
-        _in "$3" '\$' && eval echo $3 || echo $3
+        IN "$3" '\$' && eval echo $3 || echo $3
         return 1
     }
 }
 
 # ---------------------------------------------------------------------------- #
-CC_CANDIDATES="cc clang gcc"
-PREFIX_PATH_CANDIDATES="$PREFIX /usr/local /opt $HOME"
-check detect_target     "TARGET"                                            &&
-_in "$PREFIX" "Darwin" "Y"                                                  &&
-    check detect_prefix "PREFIX"    '"$PREFIX_PATH_CANDIDATES"'             ||
-    check detect_path   "PREFIX"    '"$PREFIX_PATH_CANDIDATES" "dr" "one"'  &&
+WRITE_VARS() {
 
-INCLUDE_PATH_CANDIDATES="/usr/include $PREFIX/include"                      &&
-LIB_PATH_CANDIDATES="/lib /usr/lib /usr/lib32 $PREFIX/lib"                  &&
-WITH_TCP_NODELAY=${WITH_TCP_NODELAY-1}
+    #
+    # Write variables and their values into a file
+    #
+    # $1 - a string containing space separated variable names
+    # $2 - a file to write or (update) the variables
+    # $3 - [yY] make a backup of modified file or [nN], default [nN]
 
-check detect_lib_path   "LIB_PATH"  '"$LIB_PATH_CANDIDATES" "dr" "all"'     &&
-check detect_cc         "CC"        'cc'                                    &&
-check detect_library    "ssl"       'ssl'                                   &&
-check detect_library    "LIBSSH2"   'ssh2'                                  &&
-check detect_user       "WITH_USER"                                         ||
-printf "Fatal: Mandatory check failed!\n"
 
-SET_VARS="WITH_TCP_NODELAY WITH_USER PREFIX"
-write_vars "$SET_VARS" "mfile"
+    _vars=$1
+    _file=$2
+    _back="$3"
+    _var_rgx="^[[:space:]]*"
+    _val_rgx="[[:space:]]*[a-zA-Z0-9[:punct:]]*"
+
+    for i in $_vars; do
+        _var="$i"
+        _val="`eval echo '$'{$i}`"
+
+        # Find if variable is in the file
+        [ "`grep "$_var_rgx$_var[[:space:]]*\?*=$_val_rgx" "$_file"`" ] && {
+            # Update the variable value...
+            _DPRINTF "WRITE_VARS(): Updating [$_var] ?= [$_val] > [$_file] Backup: [$_back]"
+            _YN "$_back" && cp "$_file" "$_file.back"
+            sed -i '' 's|'"$_var_rgx"''"$_var"'[[:space:]]*\?*='"$_val_rgx"'|'"$_var"'?='"$_val"'|' "$_file"
+
+        } || {
+            # ... or initiate it with the value
+            _YN "$_back" && cp "$_file" "$_file.back"
+            _DPRINTF "WRITE_VARS(): Creating [$_var] ?= [$_val] > [$_file] Backup: [$_back]"
+            _f=`cat $_file`
+            printf "%s?=%s\n%s" "$_var" "$_val" "$_f" > $_file
+        }
+    done
+}

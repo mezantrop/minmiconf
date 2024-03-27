@@ -1,0 +1,33 @@
+#!/bin/sh
+
+# ---------------------------------------------------------------------------- #
+# Sample Minmiconf configure script. It is NOT compatible with autotools one!  #
+# ---------------------------------------------------------------------------- #
+
+# ---------------------------------------------------------------------------- #
+. ./minmiconf
+# ---------------------------------------------------------------------------- #
+
+_DEBUG=Y
+
+# ---------------------------------------------------------------------------- #
+CC_CANDIDATES="cc clang gcc"
+PREFIX_CANDIDATES="$PREFIX /usr/local /opt $HOME"
+DECIDE DETECT_TARGET     "TARGET"                                           &&
+IN "$PREFIX" "Darwin" "Y"                                                   &&
+    DECIDE DETECT_PREFIX "PREFIX"    '"$PREFIX_CANDIDATES"'                 ||
+    DECIDE DETECT_PATH   "PREFIX"    '"$PREFIX_CANDIDATES" "dr" "one"'      &&
+
+INCLUDE_PATH_CANDIDATES="/usr/include $PREFIX/include"                      &&
+LIB_PATH_CANDIDATES="/lib /usr/lib /usr/lib32 $PREFIX/lib"                  &&
+WITH_TCP_NODELAY=${WITH_TCP_NODELAY-1}
+
+DECIDE DETECT_LIB_PATH   "LIB_PATH"  '"$LIB_PATH_CANDIDATES" "dr" "all"'    &&
+DECIDE DETECT_CC         "CC"        'cc'                                   &&
+DECIDE DETECT_LIBRARY    "ssl"       'ssl'                                  &&
+DECIDE DETECT_LIBRARY    "LIBSSH2"   'ssh2'                                 &&
+DECIDE DETECT_USER       "USER"                                             ||
+printf "Fatal: Mandatory check failed!\n"
+
+SET_VARS="WITH_TCP_NODELAY USER PREFIX"
+WRITE_VARS "$SET_VARS" "Makefile" "Y"
