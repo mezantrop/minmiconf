@@ -42,7 +42,8 @@
 |`DETECT_CC()`      |Detect C-compiler; `$1`: Results variable; `$2`: Compiler candidates in addition to CC_CANDIDATES |
 |`DETECT_PATH()`    |Print one or all (based on `$4`) pathname(s) from a list `$2` with permissions `$3`; Result in`$1`|
 |`DETECT_PREFIX()`  |Similar to `DETECT_PATH()`; detects prefix from PREFIX variable, $2 and PREFIX_PATH_CANDIDATES    |
-|`DETECT_LIB_PATH()`|Similar to `DETECT_PATH()`, detects valid library path(s) from a list                             |
+|`DETECT_IPATH()`   |Similar to `DETECT_PATH()`, detects valid include path(s) from a list                             |
+|`DETECT_LPATH()`   |Similar to `DETECT_PATH()`, detects valid library path(s) from a list                             |
 |`DETECT_LIBRARY()` |Detect library with name `$2` exists using `$3` path(s) list as hints; Result in`$1`              |
 |`DETECT_TARGET()`  |Detect target triplet: machine-vendor-os; Result in`$1`                                           |
 |`DETECT_USER()`    |Detect current username; Respects `USER` and `WITH_USER` variables; `$1`: Results variable        |

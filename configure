@@ -8,26 +8,33 @@
 . ./minmiconf
 # ---------------------------------------------------------------------------- #
 
-_DEBUG=Y
+_DEBUG=N
 
 # ---------------------------------------------------------------------------- #
 CC_CANDIDATES="cc clang gcc"
 PREFIX_CANDIDATES="$PREFIX /usr/local /opt $HOME"
-DECIDE DETECT_TARGET     "TARGET"                                           &&
-IN "$PREFIX" "Darwin" "Y"                                                   &&
-    DECIDE DETECT_PREFIX "PREFIX"    '"$PREFIX_CANDIDATES"'                 ||
-    DECIDE DETECT_PATH   "PREFIX"    '"$PREFIX_CANDIDATES" "dr" "one"'      &&
+DECIDE DETECT_TARGET    "TARGET"
+IN "$PREFIX" "Darwin" "Y" &&
+    DECIDE DETECT_PREFIX "PREFIX"   '"$PREFIX_CANDIDATES"' ||
+    DECIDE DETECT_PATH   "PREFIX"   '"$PREFIX_CANDIDATES" "dr" "one"'
 
-INCLUDE_PATH_CANDIDATES="/usr/include $PREFIX/include"                      &&
-LIB_PATH_CANDIDATES="/lib /usr/lib /usr/lib32 $PREFIX/lib"                  &&
+INCLUDE_PATH_CANDIDATES="/usr/include $PREFIX/include"
+LIB_PATH_CANDIDATES="/lib /usr/lib /usr/lib32 $PREFIX/lib"
 WITH_TCP_NODELAY=${WITH_TCP_NODELAY-1}
 
-DECIDE DETECT_LIB_PATH   "LIB_PATH"  '"$LIB_PATH_CANDIDATES" "dr" "all"'    &&
-DECIDE DETECT_CC         "CC"        'cc'                                   &&
-DECIDE DETECT_LIBRARY    "ssl"       'ssl'                                  &&
-DECIDE DETECT_LIBRARY    "LIBSSH2"   'ssh2'                                 &&
-DECIDE DETECT_USER       "USER"                                             ||
-printf "Fatal: Mandatory check failed!\n"
+DECIDE DETECT_LPATH     "LPATH"     '"$LIB_PATH_CANDIDATES" "all"'
+DECIDE DETECT_IPATH     "IPATH"     '"$INCLUDE_PATH_CANDIDATES" "all"'
+DECIDE DETECT_CC        "CC"        'cc'
+DECIDE DETECT_LIBRARY   "LIBSSL"    'ssl'
 
-SET_VARS="WITH_TCP_NODELAY USER PREFIX"
+[ -n "$WITH_LIBSSH2" ] && [$WITH_LIBSSH2 -ne 0 ] &&
+    DECIDE DETECT_LIBRARY    "LIBSSH2"  'ssh2' && WITH_LIBSSH2=1
+[ -z "$WITH_LIBSSH2" ] &&
+    DECIDE DETECT_LIBRARY    "LIBSSH2"  'ssh2' && WITH_LIBSSH2=1
+DECIDE DETECT_USER      "USER"
+
+CPATH="$CPATH $IPATH"
+LDFLAGS="$LDFLAGS $LPATH"
+LDLIBS="$LDLIBS $LIBSSL $LIBSSH2"
+SET_VARS="PREFIX PREFIX WITH_TCP_NODELAY WITH_LIBSSH2 CPATH LDFLAGS LDLIBS"
 WRITE_VARS "$SET_VARS" "Makefile" "Y"

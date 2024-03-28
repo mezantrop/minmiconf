@@ -7,6 +7,8 @@
 
 # -- Script variables -------------------------------------------------------- #
 _DEBUG="n"
+_INCLUDE_PATH=""                            # Cache detected INCLUDE dirs
+_LIB_PATH=""                                # Cache detected LIB directories
 
 # ---------------------------------------------------------------------------- #
 _YN() {
@@ -190,10 +192,10 @@ DETECT_PATH() {
 }
 
 # ---------------------------------------------------------------------------- #
-DETECT_LIB_PATH() {
+DETECT_IPATH() {
 
     #
-    # Detect valid linrary path(s) from $2 and or LIB_PATH_CANDIDATES
+    # Detect valid include path(s) from $2 and/or INCLUDE_PATH, INCLUDE_PATH_CANDIDATES
     #
     # $1 - Results variable
     # $2 - Space separated path specifications
@@ -203,34 +205,80 @@ DETECT_LIB_PATH() {
     # Return: 0 - on success, 1 on failure or error
     #
 
-    [ -z "$2" -a -z "$LIB_PATH_CANDIDATES" ] && {
-        _DPRINTF "DETECT_LIB_PATH(): Neither LIB_PATH_CANDIDATES nor \$2 list is set"
+    [ -z "$2" -a -z "$INCLUDE_PATH" -a -z "$INCLUDE_PATH_CANDIDATES" ] && {
+        _DPRINTF "DETECT_IPATH(): Neither INCLUDE_PATH, INCLUDE_PATH_CANDIDATES nor \$2 list is set"
+        eval $1=''                              # Return value
+        return 1
+    }
+    _ipath="$2"
+    _scope="$4"
+    [ -n "$INCLUDE_PATH" -a "$_ipath" != "$INCLUDE_PATH" ] && _ipath="$_ipath $INCLUDE_PATH"
+    [ -n "$INCLUDE_PATH_CANDIDATES" -a "$_ipath" != "$INCLUDE_PATH_CANDIDATES" ] &&
+        _ipath="$_ipath $INCLUDE_PATH_CANDIDATES"
+
+    [ -n "$4" ] && _scope="$4" || _scope="all"
+
+    _dp=""
+    DETECT_PATH "_dp" "$_ipath" "dr" "$_scope"
+    [ $? -gt 0 ] && {
+        _DPRINTF "DETECT_IPATH(): No available include paths"
+        eval $1=''                              # Return value
+        return 1
+    }
+
+    _out=""                     # Clean _out spoiled by DETECT_PATH()
+    for i in $_dp; do
+        [ -z "$_out" ] && _out="-I$i" || _out="$_out -I$i"
+    done
+
+    _DPRINTF "DETECT_IPATH(): [$_out]"
+    eval $1='$_out'                             # Return value
+    _INCLUDE_PATH="$_out"                       # Save to reuse in detections
+    return 0
+}
+
+# ---------------------------------------------------------------------------- #
+DETECT_LPATH() {
+
+    #
+    # Detect valid library path(s) from $2 and/or LIB_PATH, LIB_PATH_CANDIDATES
+    #
+    # $1 - Results variable
+    # $2 - Space separated path specifications
+    # $3 - 1 or "all" to print all valid; 0 or "" to show the first one only
+    # Output: Prints matched path(s) or empty string on error
+    # Return: 0 - on success, 1 on failure or error
+    #
+
+    [ -z "$2" -a -z "$LIB_PATH" -a -z "$LIB_PATH_CANDIDATES" ] && {
+        _DPRINTF "DETECT_LPATH(): Neither LIB_PATH, LIB_PATH_CANDIDATES nor \$2 list is set"
         eval $1=''                              # Return value
         return 1
     }
     _lpath="$2"
-    _perms="$3"
-    _scope="$4"
+    _scope="$3"
+    [ -n "$LIB_PATH" -a "$_lpath" != "$LIB_PATH" ] && _lpath="$_lpath $LIB_PATH"
     [ -n "$LIB_PATH_CANDIDATES" -a "$_lpath" != "$LIB_PATH_CANDIDATES" ] &&
         _lpath="$_lpath $LIB_PATH_CANDIDATES"
-    [ -n "$3" ] && _perms="$3" ||_perms="dr"
-    [ -n "$4" ] && _scope="$4" || _scope="all"
+
+    [ -n "$4" ] && _scope="$3" || _scope="all"
 
     _dp=""
-    DETECT_PATH "_dp" "$_lpath" "$_perms" "$_scope"
+    DETECT_PATH "_dp" "$_lpath" "dr" "$_scope"
     [ $? -gt 0 ] && {
-        _DPRINTF "DETECT_LIB_PATH(): No available library paths"
+        _DPRINTF "DETECT_LPATH(): No available library paths"
         eval $1=''                              # Return value
         return 1
     }
 
-    _out=""                     # Clean _out spoiled by DETECT_LIB_PATH()
+    _out=""                     # Clean _out spoiled by DETECT_PATH()
     for l in $_dp; do
         [ -z "$_out" ] && _out="-L$l" || _out="$_out -L$l"
     done
 
-    _DPRINTF "DETECT_LIB_PATH(): [$_out]"
+    _DPRINTF "DETECT_LPATH(): [$_out]"
     eval $1='$_out'                             # Return value
+    _LIB_PATH="$_out"                           # Save to reuse in detections
     return 0
 }
 
@@ -291,6 +339,9 @@ DETECT_LIBRARY() {
     [ -n "$3" ] && _lpath="$3"
     [ -n "$LIB_PATH" -a "$_lpath" != "$LIB_PATH" ] &&
         _lpath="$_lpath $LIB_PATH"
+    # Cached LIB directories
+    [ -n "$_LIB_PATH" -a "$_lpath" != "$_LIB_PATH" ] &&
+        _lpath="$_lpath $_LIB_PATH"
     [ -n "$LIBPATH" ] && _lpath="$LIBPATH"
 
     [ -z "$CC" ] && {
@@ -307,7 +358,7 @@ DETECT_LIBRARY() {
     echo "int main() {return 0;}" > $_testc
     $CC $_testc -o $_testc.out -l"$_tlib" $_lpath > /dev/null 2>&1
     _r=$?
-    eval $1='$_tlib'
+    eval $1='-l$_tlib'
     rm -r $_tmpd
     [ $_r -eq 0 ] && {
         _DPRINTF "DETECT_LIBRARY(): Library: [$_tlib] found"
@@ -335,7 +386,7 @@ DETECT_CC() {
         CC="$_cc"
         # Does cc really works?
         which "$CC" > /dev/null 2>&1 &&
-            DETECT_LIBRARY LIB_NAME "c" "$LIB_PATH" > /dev/null 2>&1 && {
+            DETECT_LIBRARY LIB_NAME "c" "$LIB_PATH $_LIB_PATH" > /dev/null 2>&1 && {
 
             eval $1='$CC'
             _DPRINTF "DETECT_CC(): [$CC] found"
@@ -428,6 +479,9 @@ WRITE_VARS() {
     # $2 - a file to write or (update) the variables
     # $3 - [yY] make a backup of modified file or [nN], default [nN]
 
+    #
+    # TODO: Fix VAR = VAL. VAR += VAL; VAR ?= VAL !
+    #
 
     _vars=$1
     _file=$2
