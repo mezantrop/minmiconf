@@ -477,35 +477,38 @@ WRITE_VARS() {
     #
     # $1 - a string containing space separated variable names
     # $2 - a file to write or (update) the variables
-    # $3 - [yY] make a backup of modified file or [nN], default [nN]
-
-    #
-    # TODO: Fix VAR = VAL. VAR += VAL; VAR ?= VAL !
+    # $3 - Assignment mod for newly created vars: ""(empty, default), "+" or "?""
+    # $4 - [yY] make a backup of modified file or [nN], default [nN]
     #
 
     _vars=$1
     _file=$2
-    _back="$3"
+    _mod=${3-""}
+    _back=${4-"N"}
     _var_rgx="^[[:space:]]*"
-    _val_rgx="[[:space:]]*[a-zA-Z0-9[:punct:]]*"
+    _val_rgx="[[:space:]]*[a-zA-Z0-9[:punct:][:space:]]*"
+
+    case "$3" in
+        \=|\+|\?)  _mod="$3"   ;;
+        *)      _mod=""     ;;
+    esac
 
     for i in $_vars; do
         _var="$i"
         _val="`eval echo '$'{$i}`"
 
         # Find if variable is in the file
-        [ "`grep "$_var_rgx$_var[[:space:]]*\?*=$_val_rgx" "$_file"`" ] && {
+        [ "`grep "$_var_rgx$_var[[:space:]]*[\?\+]*=$_val_rgx" "$_file"`" ] && {
             # Update the variable value...
-            _DPRINTF "WRITE_VARS(): Updating [$_var] ?= [$_val] > [$_file] Backup: [$_back]"
+            _DPRINTF "WRITE_VARS(): Updating [$_var] = [$_val] > [$_file] Backup: [$_back]"
             _YN "$_back" && cp "$_file" "$_file.back"
-            sed -i '' 's|'"$_var_rgx"''"$_var"'[[:space:]]*\?*='"$_val_rgx"'|'"$_var"'?='"$_val"'|' "$_file"
-
+            sed -i '' 's|\('"$_var_rgx"''"$_var"'[[:space:]]*[\?\+]*=\)'"$_val_rgx"'|\1'"$_val"'|' "$_file"
         } || {
             # ... or initiate it with the value
             _YN "$_back" && cp "$_file" "$_file.back"
-            _DPRINTF "WRITE_VARS(): Creating [$_var] ?= [$_val] > [$_file] Backup: [$_back]"
+            _DPRINTF "WRITE_VARS(): Creating [$_var] $_mod= [$_val] > [$_file] Backup: [$_back]"
             _f=`cat $_file`
-            printf "%s?=%s\n%s" "$_var" "$_val" "$_f" > $_file
+            printf "%s%s=%s\n%s" "$_var" "$_mod" "$_val" "$_f" > $_file
         }
     done
 }
