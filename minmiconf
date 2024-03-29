@@ -50,6 +50,31 @@ _DPRINTF() {
 }
 
 # ---------------------------------------------------------------------------- #
+IF_NNEG_IVAR() {
+
+    #
+    # IF $1 variable is NOT defined or has $2 numeric value,
+    # return 0 otherwise return 1
+    #
+
+    _var=`eval echo '$'"$1"`
+    _val=$2
+
+    [ -z "$_var" ] && {
+        _DPRINTF "IF_NNEG_IVAR(): [$1] does not exist"
+        return 0
+    }
+
+    [ $_var -eq $2 ] && {
+        _DPRINTF "IF_NNEG_IVAR(): [$1] == [$2]"
+        return 0
+    }
+
+    _DPRINTF "IF_NNEG_IVAR(): [$1] != [$2]"
+    return 1
+}
+
+# ---------------------------------------------------------------------------- #
 IN() {
 
     #
@@ -68,6 +93,27 @@ IN() {
 }
 
 # ---------------------------------------------------------------------------- #
+DETECT_COMMAND() {
+
+    #
+    # Try to detect $2 command existence;
+    # Results variable: $1
+    # Return: 0 - on success, 1 on failure or error
+    #
+
+    [ $? -eq 0 ] && {
+    _out=`which "$2"`
+        _DPRINTF "DETECT_COMMAND(): Command [$1] found"
+        eval $1='$_out'                                 # Return value
+        return 0
+    } || {
+        _DPRINTF "DETECT_COMMAND(): Command [$1] not found"
+        eval $1='$_out'                                 # Return value
+        return 1
+    }
+}
+
+# ---------------------------------------------------------------------------- #
 DETECT_PATH() {
 
     #
@@ -77,7 +123,7 @@ DETECT_PATH() {
     # $2 - Space separated path specifications
     # $3 - permissions to check (dfrwx), default: "drx"
     # $4 - "all" to print all valid (default); "one" to show the 1-st one only
-    # Output: Prints matched path(s) or empty string on error
+    # Results variable: Matched path(s) or empty string on error
     # Return: 0 - on success, 1 on failure or error
     #
 
@@ -442,7 +488,7 @@ DETECT_USER() {
 DECIDE() {
 
     #
-    # Checking for wrapper with yes/no result output
+    # Checking for wrapper with ok/ko result output
     # $* is a function with arguments to run
     # Returns 0 on success or 1 if a failure occured
 
@@ -459,11 +505,11 @@ DECIDE() {
     printf "Checking: %16s: " "$_target"
     # In squre brackets IN() greps for '$' and decides to eval variable or not
     eval $@ && {
-        printf "%-5s" "yes:"
+        printf "%-4s" "ok:"
         eval echo '$'$2
         return 0
     } || {
-        printf "%-5s" "no :"
+        printf "%-4s" "ko:"
         IN "$3" '\$' && eval echo $3 || echo $3
         return 1
     }
@@ -489,8 +535,8 @@ WRITE_VARS() {
     _val_rgx="[[:space:]]*[a-zA-Z0-9[:punct:][:space:]]*"
 
     case "$3" in
-        \=|\+|\?)  _mod="$3"   ;;
-        *)      _mod=""     ;;
+        \=|\+|\?)   _mod="$3"   ;;
+        *)          _mod=""     ;;
     esac
 
     for i in $_vars; do

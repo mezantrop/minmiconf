@@ -13,6 +13,16 @@ _DEBUG=N
 # ---------------------------------------------------------------------------- #
 CC_CANDIDATES="cc clang gcc"
 PREFIX_CANDIDATES="$PREFIX /usr/local /opt $HOME"
+
+DECIDE DETECT_COMMAND   "ECHO"      'echo'
+DECIDE DETECT_COMMAND   "EXPR"      'expr'
+DECIDE DETECT_COMMAND   "GREP"      'grep'
+DECIDE DETECT_COMMAND   "PRINTF"    'printf'
+DECIDE DETECT_COMMAND   "SED"       'sed'
+DECIDE DETECT_COMMAND   "MKTEMP"    'mktemp'
+DECIDE DETECT_COMMAND   "RM"        'rm'
+DECIDE DETECT_COMMAND   "UNAME"     'uname'
+
 DECIDE DETECT_TARGET    "TARGET"
 IN "$PREFIX" "Darwin" "Y" &&
     DECIDE DETECT_PREFIX "PREFIX"   '"$PREFIX_CANDIDATES"' ||
@@ -27,10 +37,11 @@ DECIDE DETECT_IPATH     "IPATH"     '"$INCLUDE_PATH_CANDIDATES" "all"'
 DECIDE DETECT_CC        "CC"        'cc'
 DECIDE DETECT_LIBRARY   "LIBSSL"    'ssl'
 
-[ -n "$WITH_LIBSSH2" ] && [$WITH_LIBSSH2 -ne 0 ] &&
-    DECIDE DETECT_LIBRARY    "LIBSSH2"  'ssh2' && WITH_LIBSSH2=1
-[ -z "$WITH_LIBSSH2" ] &&
-    DECIDE DETECT_LIBRARY    "LIBSSH2"  'ssh2' && WITH_LIBSSH2=1
+IF_NNEG_IVAR WITH_LIBSSH2 1 &&
+    DECIDE DETECT_LIBRARY    "LIBSSH2"  'ssh2' &&
+        WITH_LIBSSH2=1 ||
+        WITH_LIBSSH2=0
+
 DECIDE DETECT_USER      "USER"
 
 CPATH="$CPATH $IPATH"
