@@ -10,6 +10,10 @@ _DEBUG="n"
 _INCLUDE_PATH=""                            # Cache detected INCLUDE dirs
 _LIB_PATH=""                                # Cache detected LIB directories
 
+alias ESOFT="_EX=0"                         # return 1 on an error
+alias EHARD="_EX=1"                         # exit 1 on an error
+ESOFT
+
 # ---------------------------------------------------------------------------- #
 _YN() {
     #
@@ -50,7 +54,7 @@ _DPRINTF() {
 }
 
 # ---------------------------------------------------------------------------- #
-IF_NNEG_IVAR() {
+IF_NDEF_OR_IVAR() {
 
     #
     # IF $1 variable is NOT defined or has $2 numeric value,
@@ -101,8 +105,8 @@ DETECT_COMMAND() {
     # Return: 0 - on success, 1 on failure or error
     #
 
-    [ $? -eq 0 ] && {
     _out=`which "$2"`
+    [ $? -eq 0 ] && {
         _DPRINTF "DETECT_COMMAND(): Command [$1] found"
         eval $1='$_out'                                 # Return value
         return 0
@@ -511,7 +515,10 @@ DECIDE() {
     } || {
         printf "%-4s" "ko:"
         IN "$3" '\$' && eval echo $3 || echo $3
-        return 1
+        [ $_EX -eq 0 ] && return 1 || {
+            printf "FATAL: Mandatory check failed!\n"
+            exit 1
+        }
     }
 }
 
