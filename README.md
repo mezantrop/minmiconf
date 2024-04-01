@@ -43,7 +43,7 @@
 
 #### Detect functions
 
-| Functio         | Description                                                                                        |
+| Function        | Description                                                                                        |
 |-----------------|----------------------------------------------------------------------------------------------------|
 |`DETECT_CC`      |Detect C-compiler; `$1`: Results variable; `$2`: Compiler candidates in addition to CC_CANDIDATES   |
 |`DETECT_COMMAND` |Detect `$2` command existence; Results variable: `$1`; Return: `0` - on success, `1` if not         |
@@ -59,6 +59,8 @@
 
 | Function        | Description                                                                                        |
 |-----------------|----------------------------------------------------------------------------------------------------|
+|`CONFIG_START`   |Start config; `$1`: Results var, `$2`: lock, default `.configured`; `$3` = `[fF]` force!; Returns `0`: OK, `1`: KO|
+|`CONFIG_FINISH`  |Finish configuration; `$1`: Results var, `$2`: lock, default `.configured`; Returns `0`: OK, `1`: KO|
 |`DECIDE`         |Check and print `yes/no`; `$1`: `f()` to run; `$2`: result arg of `f()`; `$3` the rest args of `f()`|
 |`WRITE_VARS`     |Write/update variables specified in `$1` list and their values to a `$2` file                       |
 

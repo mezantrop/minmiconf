@@ -523,6 +523,51 @@ DECIDE() {
 }
 
 # ---------------------------------------------------------------------------- #
+CONFIG_START() {
+
+    #
+    # Start configuring
+    # $1 - Results variable
+    # $2 - lock-file, default .configured
+    # $3 == '[fF]' force!
+    # Returns 0 if OK, or 1 if KO
+    #
+
+    _lock=${2-".configured"}
+
+    [ "$3" == "f" -o  "$3" == "F" ] && rm -r "$_lock"
+    eval $1='$_lock'
+
+    [ -f "$_lock" ] && {
+        _DPRINTF "CONFIG_START(): Already configured!"
+        return 1
+    }
+
+    _DPRINTF "CONFIG_START(): Not configured!"
+    return 0
+}
+
+# ---------------------------------------------------------------------------- #
+CONFIG_FINISH() {
+
+    #
+    # Finish configuration
+    # $1 - Results variable
+    # $2 - lock-file, default .configured
+    #
+
+    _lock=${2-".configured"}
+    eval $1='$_lock'
+    touch "$_lock" && {
+        _DPRINTF "CONFIG_FINISH(): Configured!"
+        return 0
+    }
+
+    _DPRINTF "CONFIG_FINISH(): Failed to set Configured flag!"
+    return 1
+}
+
+# ---------------------------------------------------------------------------- #
 WRITE_VARS() {
 
     #
