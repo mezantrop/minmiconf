@@ -9,6 +9,7 @@
 _DEBUG="n"
 _INCLUDE_PATH=""                            # Cache detected INCLUDE dirs
 _LIB_PATH=""                                # Cache detected LIB directories
+_TARGET=""                                  # Cache detected TARGET
 
 alias ESOFT="_EX=0"                         # return 1 on an error
 alias EHARD="_EX=1"                         # exit 1 on an error
@@ -408,12 +409,13 @@ DETECT_LIBRARY() {
     echo "int main() {return 0;}" > $_testc
     $CC $_testc -o $_testc.out -l"$_tlib" $_lpath > /dev/null 2>&1
     _r=$?
-    eval $1='-l$_tlib'
     rm -r $_tmpd
     [ $_r -eq 0 ] && {
+        eval $1='-l$_tlib'
         _DPRINTF "DETECT_LIBRARY(): Library: [$_tlib] found"
         return 0
     } || {
+        eval $1=''
         _DPRINTF "DETECT_LIBRARY(): Library: [$_tlib] not found"
         return 1
     }
@@ -468,6 +470,7 @@ DETECT_TARGET() {
 
     _DPRINTF "DETECT_TARGET(): [$_triplet]"
     eval $1='$_triplet'
+    _TARGET="$_triplet"                             # Cache TARGET
     return 0
 }
 
@@ -510,12 +513,12 @@ DECIDE() {
     # In squre brackets IN() greps for '$' and decides to eval variable or not
     eval $@ && {
         printf "%-4s" "ok:"
-        eval echo $2 = '$'$2 || echo $2 = $2
+        eval echo $2: '$'$2 || echo $2: $2
         return 0
     } || {
         printf "%-4s" "ko:"
         [ -n "$3" ] && {
-            IN "$3" '\$' && eval echo $2 ! $3 || echo $2 ! $3
+            IN "$3" '\$' && eval echo $2: $3 || echo $2: $3
         } || {
             eval echo $2 = '$'$2
         }
@@ -573,6 +576,26 @@ CONFIG_FINISH() {
 }
 
 # ---------------------------------------------------------------------------- #
+CONFIG_CLEAN() {
+
+    #
+    # Remove configuration lock
+    # $1 - Results variable
+    # $2 - lock-file, default .configured
+    #
+
+    _lock=${2-".configured"}
+    eval $1='$_lock'
+    rm -r "$_lock" && {
+        _DPRINTF "CONFIG_CLEAN(): Lock released!"
+        return 0
+    }
+
+    _DPRINTF "CONFIG_CLEAN(): Failed to release configuration lock!"
+    return 1
+}
+
+# ---------------------------------------------------------------------------- #
 WRITE_VARS() {
 
     #
@@ -605,7 +628,11 @@ WRITE_VARS() {
             # Update the variable value...
             _DPRINTF "WRITE_VARS(): Updating [$_var] = [$_val] > [$_file] Backup: [$_back]"
             _YN "$_back" && cp "$_file" "$_file.back"
-            sed -i '' 's|\('"$_var_rgx"''"$_var"'[[:space:]]*[\?\+]*=\)'"$_val_rgx"'|\1'"$_val"'|' "$_file"
+            IN "$TARGET" "Linux" "Y" && {
+                sed -i -e 's|\('"$_var_rgx"''"$_var"'[[:space:]]*[\?\+]*=\)'"$_val_rgx"'|\1'"$_val"'|' "$_file"
+            } || {
+                sed -i '' 's|\('"$_var_rgx"''"$_var"'[[:space:]]*[\?\+]*=\)'"$_val_rgx"'|\1'"$_val"'|' "$_file"
+            }
         } || {
             # ... or initiate it with the value
             _YN "$_back" && cp "$_file" "$_file.back"

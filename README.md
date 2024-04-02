@@ -59,8 +59,9 @@
 
 | Function        | Description                                                                                        |
 |-----------------|----------------------------------------------------------------------------------------------------|
-|`CONFIG_START`   |Start config; `$1`: Results var, `$2`: lock, default `.configured`; `$3` = `[fF]` force!; Returns `0`: OK, `1`: KO|
+|`CONFIG_CLEAN`   |Remove configuration lock; `$1` - Results variable; `$2` - lock-file, default `.configured`         |
 |`CONFIG_FINISH`  |Finish configuration; `$1`: Results var, `$2`: lock, default `.configured`; Returns `0`: OK, `1`: KO|
+|`CONFIG_START`   |Start config; `$1`: Results var, `$2`: lock, default `.configured`; `$3` = `[fF]` force!; Returns `0`: OK, `1`: KO|
 |`DECIDE`         |Check and print `yes/no`; `$1`: `f()` to run; `$2`: result arg of `f()`; `$3` the rest args of `f()`|
 |`WRITE_VARS`     |Write/update variables specified in `$1` list and their values to a `$2` file                       |
 
