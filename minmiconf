@@ -510,11 +510,16 @@ DECIDE() {
     # In squre brackets IN() greps for '$' and decides to eval variable or not
     eval $@ && {
         printf "%-4s" "ok:"
-        eval echo '$'$2
+        eval echo $2 = '$'$2 || echo $2 = $2
         return 0
     } || {
         printf "%-4s" "ko:"
-        IN "$3" '\$' && eval echo $3 || echo $3
+        [ -n "$3" ] && {
+            IN "$3" '\$' && eval echo $2 ! $3 || echo $2 ! $3
+        } || {
+            eval echo $2 = '$'$2
+        }
+
         [ $_EX -eq 0 ] && return 1 || {
             printf "FATAL: Mandatory check failed!\n"
             exit 1
