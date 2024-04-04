@@ -33,6 +33,7 @@
 |-----------------|----------------------------------------------------------------------------------------------------|
 |`_DPRINTF`       |If debug mode is on print a message specified in `$*`                                               |
 |`_IFDEBUG`       |If `_DEBUG` value is `[yY1-9]` return `0`; `[nN0]`: `1`; on error: `2`. See `_YN()`                 |
+|`_SELF_CHK`      |Quick mandatory selfcheck                                                                           |
 |`_YN`            |If `$1` value is `[yY1-9]` return `0`; `[nN0]`: `1`; on error: `2`                                  |
 
 #### Process control functions
@@ -69,7 +70,7 @@
 
 | Function        | Description                                                                                        |
 |-----------------|----------------------------------------------------------------------------------------------------|
-|`INIT`           |Script initialization, autoc-check, etc                                                             |
+|                 |                                                                                                    |
 
 ### Contacts
 
