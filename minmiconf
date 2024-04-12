@@ -28,7 +28,7 @@
 # ---------------------------------------------------------------------------- #
 
 # -- Script variables -------------------------------------------------------- #
-version="1.0.1.1"
+version="1.1.0.0"
 _DEBUG="n"
 _INCLUDE_PATH=""                            # Cache detected INCLUDE dirs
 _LIB_PATH=""                                # Cache detected LIB directories
@@ -535,6 +535,21 @@ DETECT_USER() {
 }
 
 # ---------------------------------------------------------------------------- #
+DEFINE_VAR() {
+
+    #
+    # Define a variable and set its value
+    # $1 Results variable
+    # $2 the variable value
+    # Always returns 0
+    #
+
+    _DPRINTF "DEFINE_VAR(): setting variable: [`eval echo "$1"` = $2]"
+    eval $1='$2'
+    return 0
+}
+
+# ---------------------------------------------------------------------------- #
 DECIDE() {
 
     #
@@ -571,6 +586,18 @@ DECIDE() {
             exit 1
         }
     }
+}
+
+# ---------------------------------------------------------------------------- #
+NOTIFY() {
+
+    #
+    # Print '$2' message with premble $1
+    # Always returns 0
+    #
+
+    printf "%-8s: %s\n" "$1" "$2"
+    return 0
 }
 
 # ---------------------------------------------------------------------------- #

@@ -56,14 +56,16 @@
 |`DETECT_TARGET`  |Detect target triplet: machine-vendor-os; Result in`$1`                                             |
 |`DETECT_USER`    |Detect current username; Respects `USER` and `WITH_USER` variables; `$1`: Results variable          |
 
-#### Output functions
+#### Define and Output functions
 
 | Function        | Description                                                                                        |
 |-----------------|----------------------------------------------------------------------------------------------------|
-|`CONFIG_CLEAN`   |Remove configuration lock; `$1` - Results variable; `$2` - lock-file, default `.configured`         |
+|`CONFIG_CLEAN`   |Remove configuration lock; `$1`: Results variable; `$2`: lock-file, default: `.configured`          |
 |`CONFIG_FINISH`  |Finish configuration; `$1`: Results var, `$2`: lock, default `.configured`; Returns `0`: OK, `1`: KO|
 |`CONFIG_START`   |Start config; `$1`: Results var, `$2`: lock, default `.configured`; `$3` = `[fF]` force!; Returns `0`: OK, `1`: KO|
 |`DECIDE`         |Check and print `yes/no`; `$1`: `f()` to run; `$2`: result arg of `f()`; `$3` the rest args of `f()`|
+|`DEFINE_VAR`     |Define a variable and set its value; `$1`: Results variable; `$2`: the value; Always returns `0`    |
+|`NOTIFY`         |Print `$2`: message with a premble `$1`; Always returns `0`                                         |
 |`WRITE_VARS`     |Write/update variables specified in `$1` list and their values to a `$2` file                       |
 
 ### TO-DO List
