@@ -28,7 +28,7 @@
 # ---------------------------------------------------------------------------- #
 
 # -- Script variables -------------------------------------------------------- #
-version="1.1.0.0"
+version="1.1.0.1"
 _DEBUG="n"
 _INCLUDE_PATH=""                            # Cache detected INCLUDE dirs
 _LIB_PATH=""                                # Cache detected LIB directories
@@ -531,7 +531,7 @@ DETECT_USER() {
 
     eval $1='$_user'
     _DPRINTF "DETECT_USER(): detected user: [$_user]"
-    [ -n $_user ] && return 0 || return 1
+    [ -n "$_user" ] && return 0 || return 1
 }
 
 # ---------------------------------------------------------------------------- #
