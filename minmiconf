@@ -28,7 +28,7 @@
 # ---------------------------------------------------------------------------- #
 
 # -- Script variables -------------------------------------------------------- #
-version="1.1.0.1"
+version="1.1.0.2"
 _DEBUG="n"
 _INCLUDE_PATH=""                            # Cache detected INCLUDE dirs
 _LIB_PATH=""                                # Cache detected LIB directories
@@ -84,7 +84,6 @@ _SELF_CHK() {
     # Quick mandatory selfcheck
     #
 
-    EHARD; DECIDE DETECT_COMMAND    "EXPR"      'expr'
     EHARD; DECIDE DETECT_COMMAND    "GREP"      'grep'
     EHARD; DECIDE DETECT_COMMAND    "SED"       'sed'
     EHARD; DECIDE DETECT_COMMAND    "MKTEMP"    'mktemp'
@@ -100,7 +99,7 @@ IF_NDEF_OR_IVAR() {
     # return 0 otherwise return 1
     #
 
-    _var=`eval echo '$'"$1"`
+    _var=$(eval echo '$'"$1")
     _val=$2
 
     [ -z "$_var" ] && {
@@ -132,7 +131,7 @@ IN() {
         *)      _icase=""   ;;
     esac
 
-    echo "$1" | grep `eval echo "$_icase"` -q "$2" && return 0 || return 1
+    echo "$1" | grep $(eval echo "$_icase") -q "$2" && return 0 || return 1
 }
 
 # ---------------------------------------------------------------------------- #
@@ -144,7 +143,7 @@ DETECT_COMMAND() {
     # Return: 0 - on success, 1 on failure or error
     #
 
-    _out=`which "$2"`
+    _out=$(which "$2")
     [ $? -eq 0 ] && {
         _DPRINTF "DETECT_COMMAND(): Command [$1] found"
         eval $1='$_out'                                 # Return value
@@ -174,9 +173,9 @@ DETECT_PATH() {
     _path="$2"
     # Prepare permissions string for iteration: "DRWX" -> "d r w x "
     [ -n "$3" ] &&
-        _prms="`echo "$3" |
+        _prms="$(echo "$3" |
             sed -e 's/\([a-z]\)/\1 /g' \
-                -e 'y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/'`" ||
+                -e 'y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/')" ||
         _prms="drx"
 
     [ -z "$4" ] && _all=1 ||
@@ -210,41 +209,41 @@ DETECT_PATH() {
         for _prm in $_prms; do
             case "$_prm" in
                 *d*)
-                    _inp=`expr $_inp + 1`
+                    _inp=$(($_inp + 1))
                     [ -d "$_p" ] && {
-                        _acp=`expr $_acp + 1`
+                        _acp=$(($_acp + 1))
                         _IFDEBUG && _dout="$_dout""d"
                     } || break;
                 ;;
 
                 *f*)
-                    _inp=`expr $_inp + 10`
+                    _inp=$(($_inp + 10))
                     [ -f "$_p" ] && {
-                        _acp=`expr $_acp + 10`
+                        _acp=$(($_acp + 10))
                         _IFDEBUG && _dout="$_dout""f"
                     } || break;
                 ;;
 
                 *r*)
-                    _inp=`expr $_inp + 100`
+                    _inp=$(($_inp + 100))
                     [ -r "$_p" ] && {
-                        _acp=`expr $_acp + 100`
+                        _acp=$(($_acp + 100))
                         _IFDEBUG && _dout="$_dout""r"
                     } || break;
                 ;;
 
                 *w*)
-                    _inp=`expr $_inp + 1000`
+                    _inp=$(($_inp + 1000))
                     [ -w "$_p" ] && {
-                        _acp=`expr $_acp + 1000`
+                        _acp=$(($_acp + 1000))
                         _IFDEBUG && _dout="$_dout""w"
                     } || break;
                 ;;
 
                 *x*)
-                    _inp=`expr $_inp + 10000`
+                    _inp=$(($_inp + 10000))
                     [ -x "$_p" ] && {
-                        _acp=`expr $_acp + 10000`
+                        _acp=$(($_acp + 10000))
                         _IFDEBUG && _dout="$_dout""x"
                     } || break;
                 ;;
@@ -443,7 +442,7 @@ DETECT_LIBRARY() {
         return 1
     }
 
-    _tmpd=`mktemp -d ./minmiconf.XXXXXX` || {
+    _tmpd=$(mktemp -d ./minmiconf.XXXXXX) || {
         _DPRINTF "DETECT_LIBRARY(): Failed creating a temporary directory"
         return 1
     }
@@ -504,9 +503,9 @@ DETECT_TARGET() {
     #
 
     # Very rough approach
-    _machine=`uname -m`
+    _machine=$(uname -m)
     _vendor="unknown"
-    _os=`uname -s`
+    _os=$(uname -s)
 
     [ "$_machine" = "amd64" ] && _machine="x86_64"
     _triplet="$_machine-$_vendor-$_os"
@@ -527,7 +526,7 @@ DETECT_USER() {
 
     [ -n "$USER" ] && _user="$USER"
     [ -n "$WITH_USER" ] && _user="$WITH_USER"
-    _user=${_user=`whoami`}
+    _user=${_user=$(whoami)}
 
     eval $1='$_user'
     _DPRINTF "DETECT_USER(): detected user: [$_user]"
@@ -544,7 +543,7 @@ DEFINE_VAR() {
     # Always returns 0
     #
 
-    _DPRINTF "DEFINE_VAR(): setting variable: [`eval echo "$1"` = $2]"
+    _DPRINTF "DEFINE_VAR(): setting variable: [$(eval echo "$1") = $2]"
     eval $1='$2'
     return 0
 }
@@ -559,7 +558,7 @@ DECIDE() {
 
     case "$1" in
         detect_*)
-            _target=`echo $1 | cut -f 2,3 -d '_'`
+            _target=$(echo $1 | cut -f 2,3 -d '_')
         ;;
 
         *)
@@ -691,14 +690,14 @@ WRITE_VARS() {
 
     for i in $_vars; do
         _var="$i"
-        _val="`eval echo '$'{$i}`"
+        _val="$(eval echo '$'{$i})"
 
         # Find if variable is in the file
-        [ "`grep "$_var_rgx$_var[[:space:]]*[\?\+]*=$_val_rgx" "$_file"`" ] && {
+        [ "$(grep "$_var_rgx$_var[[:space:]]*[\?\+]*=$_val_rgx" "$_file")" ] && {
             # Update the variable value...
             _DPRINTF "WRITE_VARS(): Updating [$_var] = [$_val] > [$_file] Backup: [$_back]"
             _YN "$_back" && cp "$_file" "$_file.back"
-            IN "$TARGET" "Linux" "Y" && {
+            IN "$TARGET" "Linux" "Y" || IN "$TARGET" "OpenBSD" "Y" && {
                 sed -i -e 's|\('"$_var_rgx"''"$_var"'[[:space:]]*[\?\+]*=\)'"$_val_rgx"'|\1'"$_val"'|' "$_file"
             } || {
                 sed -i '' 's|\('"$_var_rgx"''"$_var"'[[:space:]]*[\?\+]*=\)'"$_val_rgx"'|\1'"$_val"'|' "$_file"
@@ -707,7 +706,7 @@ WRITE_VARS() {
             # ... or initiate it with the value
             _YN "$_back" && cp "$_file" "$_file.back"
             _DPRINTF "WRITE_VARS(): Creating [$_var] $_mod= [$_val] > [$_file] Backup: [$_back]"
-            _f=`cat $_file`
+            _f=$(cat $_file)
             printf "%s%s=%s\n%s" "$_var" "$_mod" "$_val" "$_f" > $_file
         }
     done
