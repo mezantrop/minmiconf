@@ -4,14 +4,14 @@
 
 ### Notes
 
-* **The project is on the very early stage of development, nothing works, don't even try!**
+* **The project is on the early stage of development, don't be surprised to face issues!**
 * This not an [autotools](https://www.gnu.org/software/automake/manual/html_node/Autotools-Introduction.html) `configure` script
 * There are many better alternatives: less complex or having more functionality, but I like inventing bicycles
 * Yes, you most probably, do not need `Minmiconf`
 
 ### Description
 
-#### mconfigure anathomy
+#### (m)configure anathomy
 
 * Script maintenance variables, with names staring with "_" character
 * Global default variables
