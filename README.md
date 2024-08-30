@@ -38,6 +38,8 @@
 
 #### Process control functions
 
+| Function        | Description                                                                                        |
+|-----------------|----------------------------------------------------------------------------------------------------|
 |`EHARD`/`ESOFT`  |Define functions behavior on an error: `EHARD`: `exit 1`, `ESOFT`: `return 1`                       |
 |`IF_NDEF_OR_IVAR`|IF `$1` variable is NOT defined or has `$2` numeric value, return `0` otherwise return `1`          |
 |`IN`             |String-in-string. Return `0` if `$2` is in `$1`, otherwise return `1`                               |
