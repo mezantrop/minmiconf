@@ -42,13 +42,14 @@
 |-----------------|----------------------------------------------------------------------------------------------------|
 |`EHARD`/`ESOFT`  |Define functions behavior on an error: `EHARD`: `exit 1`, `ESOFT`: `return 1`                       |
 |`IF_NDEF_OR_IVAR`|IF `$1` variable is NOT defined or has `$2` numeric value, return `0` otherwise return `1`          |
-|`IN`             |String-in-string. Return `0` if `$2` is in `$1`, otherwise return `1`                               |
+|`IN`             |String-in-string. Return `0` if `$2` is in `$1` string, otherwise return `1`                        |
+|`IN_VAR`         |String-in-variable. Return `0` if `$2` is in `$1` variable, otherwise return `1`                    |
 
 #### Detect functions
 
 | Function        | Description                                                                                        |
 |-----------------|----------------------------------------------------------------------------------------------------|
-|`DETECT_CC`      |Detect C-compiler; `$1`: Results variable; `$2`: Compiler candidates in addition to CC_CANDIDATES   |
+|`DETECT_CC`      |Detect C-compiler; `$1`: Results variable; `$2`: Compiler candidates in addition to `CC_CANDIDATES` |
 |`DETECT_COMMAND` |Detect `$2` command existence; Results variable: `$1`; Return: `0` - on success, `1` if not         |
 |`DETECT_PATH`    |Print one or all (based on `$4`) pathname(s) from a list `$2` with permissions `$3`; Result in`$1`  |
 |`DETECT_PREFIX`  |Forcibly sets prefix from `PREFIX` variable, or detects if from `$2` or `PREFIX_PATH_CANDIDATES`    |
