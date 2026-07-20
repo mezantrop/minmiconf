@@ -686,7 +686,8 @@ WRITE_VARS() {
     #
     # $1 - a string containing space separated variable names
     # $2 - a file to write or (update) the variables
-    # $3 - Assignment mod for newly created vars: ""(empty, default), "+" or "?""
+    # $3 - Assignment mod for ONLY newly created vars: ""(empty, default), "+" or "?""
+    #      Note! Mod is not changed for already existed variables!
     # $4 - [yY] make a backup of modified file or [nN], default [nN]
     #
 
